@@ -70,4 +70,16 @@ public class ClubController {
         // 调用业务层的审核方法，返回结果给前端
         return clubInfoService.auditClub(dto);
     }
+
+    /**
+     * 修改社团信息接口（仅负责人可操作）
+     * 路径：/api/club/update
+     * 方法：POST
+     */
+    @Operation(summary = "修改社团信息")
+    @PostMapping("/update")
+    public Result<?> updateClub(@Valid @RequestBody CreateClubDTO dto) {
+        // 调用业务层修改社团信息的方法，返回结果给前端
+        return clubInfoService.updateClub(dto);
+    }
 }

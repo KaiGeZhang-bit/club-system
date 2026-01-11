@@ -128,4 +128,42 @@ public class ClubInfoServiceImpl extends ServiceImpl<ClubInfoMapper, ClubInfo> i
         }
     }
 
+    /**
+     * 修改社团信息
+     *
+     * @param dto 社团信息DTO
+     * @return 操作结果
+     */
+    @Override
+    public Result<?> updateClub(CreateClubDTO dto) {
+        // 1. 校验：社团是否存在
+       QueryWrapper<ClubInfo> query = new QueryWrapper<>();
+       query.eq("club_name", dto.getClubName());
+       ClubInfo club = clubInfoMapper.selectOne(query);
+       if (clubInfoMapper.selectCount(query) <= 0) {
+           throw BusinessException.businessError("社团不存在，无法修改");
+
+
+       }
+        // 2. 校验：社团类型是否合法（可选，根据实际类型列表限制）
+        // 示例：仅允许3种类型，可根据你的业务扩展
+        if (!"学术科技类".equals(dto.getClubType())
+                && !"文化体育类".equals(dto.getClubType())
+                && !"公益服务类".equals(dto.getClubType())) {
+            throw BusinessException.businessError("社团类型只能是：学术科技类、文化体育类、公益服务类");
+        }
+        //3.检验登录用户是否是社团负责人
+        SysUser currentUser = sysUserService.getCurrentUser();
+
+        Long leaderId = currentUser.getId();
+        if (!leaderId.equals(club.getLeaderId())) {
+            throw BusinessException.businessError("您不是该社团的负责人，无法修改");
+        }
+        // 4. 更新社团信息
+        BeanUtils.copyProperties(dto, club); // 复制所有字段（名称、类型、负责人、老师等）
+        club.setUpdateTime(LocalDateTime.now());
+        clubInfoMapper.updateById(club);
+
+        return Result.success("社团信息修改成功");
     }
+}

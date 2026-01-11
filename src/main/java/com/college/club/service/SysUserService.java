@@ -23,6 +23,7 @@ public interface SysUserService extends IService<SysUser> {
     boolean updateUserProfile(UserProfileUpdateDTO profileDTO);
 
     boolean ChangePassword(ChangePasswordDTO changePasswordDTO);
+
 }
 
 
