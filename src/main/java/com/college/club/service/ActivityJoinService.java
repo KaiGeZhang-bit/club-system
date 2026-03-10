@@ -2,8 +2,10 @@ package com.college.club.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.college.club.common.vo.ActivityJoinListVO;
+import com.college.club.common.vo.ActivitySignQrVo;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ActivityJoinDTO;
+import com.college.club.dto.ScanSignReqDTO;
 import com.college.club.entity.ActivityJoin;
 
 import java.util.List;
@@ -20,4 +22,9 @@ public interface ActivityJoinService extends IService<ActivityJoin> {
     Result<?> auditActivityJoin(ActivityJoinDTO dto);
     // 查询单个用户的审核状态
     Result<ActivityJoinListVO> getAuditStatus(Long activityId, Long userId);
+
+    //生成签到二维码
+    Result<ActivitySignQrVo> generateSignQr(Long activityId);
+    //二维码签到
+    Result<?> scanSign(ScanSignReqDTO reqDTO);
 }

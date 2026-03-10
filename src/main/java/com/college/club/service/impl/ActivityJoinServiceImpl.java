@@ -1,30 +1,54 @@
 package com.college.club.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.college.club.common.exception.BusinessException;
 import com.college.club.common.vo.ActivityJoinListVO;
+import com.college.club.common.vo.ActivitySignQrVo;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ActivityJoinDTO;
+import com.college.club.dto.ScanSignReqDTO;
 import com.college.club.entity.ActivityInfo;
 import com.college.club.entity.ActivityJoin;
 import com.college.club.mapper.ActivityInfoMapper;
 import com.college.club.mapper.ActivityJoinMapper;
 import com.college.club.service.ActivityJoinService;
+import com.college.club.util.QrCodeUtil;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.Resource;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service // 告诉代码：这是处理业务逻辑的类
+
+@Slf4j
+
+@RequiredArgsConstructor
+
 public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, ActivityJoin> implements ActivityJoinService {
 
     // 找到“活动表的管理员”，用来查活动信息、改报名人数
     @Resource
     private ActivityInfoMapper activityInfoMapper;
+
+    @Resource
+    private ActivityJoinMapper activityJoinMapper;
+
+    //二维码业务前缀（区分本系统签到二维码，防止篡改）
+    private static final String QR_CONTENT_PREFIX = "club_activity_sign_";
+    //局域网IP
+    private static final String LOCAL_IP = "192.168.0.8";
+
 
     // 报名活动的核心逻辑
     @Override
@@ -186,6 +210,110 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
         }
 
         return Result.success(vo);
+    }
+
+    @Override
+    public Result<ActivitySignQrVo> generateSignQr(Long activityId) {
+        //1.基础参数校验，活动ID必须为整数
+        if(activityId == null || activityId <= 0) {
+            // 直接new Result对象，绕过泛型转换
+            return new Result<>(403, "活动ID不存在且活动ID必须为整数", null);
+        }
+
+        //2.校验活动是否有报名记录（无报名记录无法生成二维码）
+        LambdaQueryWrapper<ActivityJoin> countWrapper = new LambdaQueryWrapper<>();
+        countWrapper.eq(ActivityJoin::getActivityId, activityId);
+        Long joinCount = this.count(countWrapper);
+        if (joinCount == 0) {
+            // 直接new Result对象
+            return new Result<>(403, "该活动没有报名人员，无法生成签到二维码", null);
+        }
+        try{
+            //3.构造二维码业务内容（前缀+活动ID，做基础业务区分）
+
+            String qrContent = "http://" + LOCAL_IP + ":8888/sign.html?qrContent=" + QR_CONTENT_PREFIX + activityId;
+
+            //4，复用工具类生成二维码Base64（没有额外要求，默认使用宽高300*300）
+            String qrCodeBase64 = QrCodeUtil.generateQrCodeBase64(qrContent);
+
+            //5.封装返回结果VO
+            ActivitySignQrVo qrVo = new ActivitySignQrVo();
+            qrVo.setActivityId(activityId);
+            qrVo.setQrContent(qrContent);
+            qrVo.setQrCodeBase64(qrCodeBase64);
+
+            log.info("活动{}的签到二维码生成成功，当前报名人数：{}", activityId, joinCount);
+            return Result.success(qrVo); // 成功分支不动，这里是对的
+        }catch (RuntimeException e) {
+            log.error("生成活动{}的签到二维码失败", activityId, e);
+            // 直接new Result对象
+            return new Result<>(403, "生成二维码失败，请重新核实条件", null);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public Result<?> scanSign(ScanSignReqDTO reqDTO) {
+        // 1. 基础参数校验
+        if (reqDTO == null || !StringUtils.hasText(reqDTO.getQrContent()) || reqDTO.getUserId() == null || reqDTO.getUserId() <= 0) {
+            return Result.failBusiness("签到参数不完整");
+        }
+
+        // 2. 提取参数
+        String qrContent = reqDTO.getQrContent();
+        Long userId = reqDTO.getUserId();
+        String signIp = StringUtils.hasText(reqDTO.getSignIp()) ? reqDTO.getSignIp() : "未知IP";
+
+        // 3. 解析二维码内容（完全适配你的"前缀+活动ID"逻辑）
+        Long activityId = null;
+        // 校验前缀是否匹配
+        if (!qrContent.startsWith(QR_CONTENT_PREFIX)) {
+            return Result.failBusiness("无效的签到二维码");
+        }
+        try {
+            // 直接截取前缀后的部分作为活动ID（和你生成逻辑完全对应）
+            String activityIdStr = qrContent.replace(QR_CONTENT_PREFIX, "");
+            activityId = Long.parseLong(activityIdStr);
+        } catch (NumberFormatException e) {
+            log.error("解析二维码内容失败，内容：{}", qrContent, e);
+            return Result.failBusiness("二维码内容损坏，无法解析活动ID");
+        }
+
+        // 4. 查询用户报名记录
+        LambdaQueryWrapper<ActivityJoin> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(ActivityJoin::getActivityId, activityId)
+                .eq(ActivityJoin::getUserId, userId);
+        ActivityJoin joinRecord = activityJoinMapper.selectOne(queryWrapper);
+
+        // 5. 核心业务校验
+        // 5.1 校验是否报名
+        if (joinRecord == null) {
+            return Result.failBusiness("你未报名该活动，无法签到");
+        }
+        // 5.2 校验审核状态（1=审核通过）
+        if (joinRecord.getAuditStatus() == null || joinRecord.getAuditStatus() != 1) {
+            return Result.failBusiness("报名审核未通过，无法签到");
+        }
+        // 5.3 校验是否已签到（1=已签到）
+        if (joinRecord.getSignStatus() != null && joinRecord.getSignStatus() == 1) {
+            return Result.failBusiness("你已完成签到，请勿重复操作");
+        }
+
+        // 6. 执行签到：更新报名记录的签到状态和时间
+        LambdaUpdateWrapper<ActivityJoin> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(ActivityJoin::getId, joinRecord.getId())
+                .set(ActivityJoin::getSignStatus, 1)          // 标记为已签到
+                .set(ActivityJoin::getSignTime, LocalDateTime.now()); // 记录签到时间
+
+        int updateCount = activityJoinMapper.update(null, updateWrapper);
+        if (updateCount <= 0) {
+            log.error("用户{}签到活动{}失败，更新记录数为0", userId, activityId);
+            return Result.failBusiness("签到失败，请重试");
+        }
+
+        // 7. 日志+返回结果
+        log.info("用户{}成功签到活动{}，签到IP：{}", userId, activityId, signIp);
+        return Result.success("签到成功！");
     }
 
 }

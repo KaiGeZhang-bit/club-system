@@ -11,7 +11,7 @@ import com.college.club.entity.SysUser;
 
 public interface SysUserService extends IService<SysUser> {
     // 修正：参数用SysUserLoginDTO（和实现类一致）
-    LoginVO login(SysUserLoginDTO dto);
+    //LoginVO login(SysUserLoginDTO dto);
 
     // 修正：参数用SysUserRegisterDTO（和实现类一致）
     RegisterVO register(SysUserRegisterDTO dto);

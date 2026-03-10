@@ -1,19 +1,27 @@
 package com.college.club.controller;
 
 import com.college.club.common.vo.ActivityJoinListVO;
+import com.college.club.common.vo.ActivitySignQrVo;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ActivityJoinDTO;
+import com.college.club.dto.ScanSignReqDTO;
+import com.college.club.entity.ActivityJoin;
 import com.college.club.service.ActivityJoinService;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.web.HttpRequestHandler;
 import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.util.StringUtils;
+
 
 import java.util.List;
 
-@Tag(name = "活动报名管理", description = "报名、取消报名接口")
+@Tag(name = "活动管理", description = "报名、取消报名、审核报名、活动签到等接口")
 @RestController // 告诉代码：这是接收前端请求的类
 @RequestMapping("/api/activity/join") // 接口路径前缀
 public class ActivityJoinController {
@@ -74,4 +82,53 @@ public class ActivityJoinController {
             return (Result<ActivityJoinListVO>) Result.failSystem("查询审核状态失败：" + e.getMessage());
         }
     }
+
+
+    @GetMapping("generateQr/{activityId}")
+    @Operation(summary = "生成签到二维码")
+    public Result<ActivitySignQrVo> generateSignQR(@PathVariable Long activityId) {
+        return activityJoinService.generateSignQr(activityId);
+    }
+
+
+    @PostMapping("/scan")
+    @Operation(summary = "用户扫码签到")
+    public Result<?> scanActivity(@Valid @RequestBody ScanSignReqDTO reqDTO, HttpServletRequest request) {
+        if(!StringUtils.hasText(reqDTO.getSignIp())){
+            reqDTO.setSignIp(getClientRealIp(request));
+        }
+
+        return activityJoinService.scanSign(reqDTO);
+
+
+
+    }
+    /**
+     * 工具方法：获取客户端真实IP（适配Nginx代理/本地测试/多代理场景）
+     * @param request HTTP请求上下文
+     * @return 客户端真实IP
+     */
+    private String getClientRealIp(HttpServletRequest request) {
+        String ip = request.getHeader("x-forwarded-for");
+        // 依次读取不同代理头，兼容各类部署场景
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("Proxy-Client-IP");
+        }
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("WL-Proxy-Client-IP");
+        }
+        // 兜底：无代理时取远程地址
+        if (ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 多代理场景：取第一个非unknown的IP
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
+    }
+
+
+
+
 }

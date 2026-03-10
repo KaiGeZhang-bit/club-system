@@ -9,7 +9,7 @@ public class Result<T> {
     private T data;
 
     // 私有构造方法（仅内部使用）
-    private Result(int code, String msg, T data) {
+    public Result(int code, String msg, T data) {
         this.code = code;
         this.msg = msg;
         this.data = data;
@@ -40,4 +40,6 @@ public class Result<T> {
     public static Result<?> fail(int code, String msg) {
         return new Result<>(code, msg, null);
     }
+
+
 }

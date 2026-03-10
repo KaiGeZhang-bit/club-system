@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>活动扫码签到演示（本地扫码版）</title>
+    <style>
+        body {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            gap: 50px;
+            flex-wrap: wrap;
+        }
+        .card {
+            border: 1px solid #eee;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            min-width: 300px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 10px 0;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #qrCodeImg {
+            margin-top: 20px;
+            max-width: 300px;
+            border: 1px solid #eee;
+            padding: 10px;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .debug-info {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #666;
+        }
+        .tips {
+            color: #666;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>活动扫码签到演示（本地扫码版）</h1>
+<div class="container">
+    <!-- 生成二维码区域 -->
+    <div class="card">
+        <h2>第一步：生成签到二维码</h2>
+        <input type="number" id="activityIdInput" placeholder="请输入活动ID（如3）" value="3">
+        <button onclick="generateQrCode()">生成二维码</button>
+        <div id="qrCodeImg"></div>
+        <div id="generateResult" class="result"></div>
+        <div id="generateDebug" class="debug-info"></div>
+        <!-- 存储生成的qrContent，供签到使用 -->
+        <input type="hidden" id="qrContentHidden">
+        <p class="tips">提示：二维码内容为带参数的URL，手机扫码可直接跳转签到</p>
+    </div>
+
+    <!-- 扫码签到区域（支持自动填充） -->
+    <div class="card">
+        <h2>第二步：扫码签到</h2>
+        <p>（真实场景：手机扫码后自动填充二维码内容）</p>
+        <input type="text" id="qrContentInput" placeholder="二维码内容（自动填充/手动输入）">
+        <input type="number" id="userIdInput" placeholder="请输入用户ID（如1001）">
+        <button onclick="scanSign()">确认签到</button>
+        <div id="signResult" class="result"></div>
+        <div id="signDebug" class="debug-info"></div>
+        <p class="tips">提示：重复签到会返回「你已完成签到」，属于正常业务逻辑</p>
+    </div>
+</div>
+
+<script>
+    // ========== 核心修复：硬编码后端8888端口，解决404 ==========
+    const BASE_URL = window.location.origin;
+    const GENERATE_QR_API = `${BASE_URL}/api/activity/join/generateQr`; // 生成二维码接口
+    const SCAN_SIGN_API = `${BASE_URL}/api/activity/join/scan`;         // 签到接口
+
+    // ========== 页面加载：解析URL参数（手机扫码跳转用） ==========
+    window.onload = function() {
+        // 解析URL中的qrContent参数（手机扫码跳转后自动填充）
+        const urlParams = new URLSearchParams(window.location.search);
+        const qrContent = urlParams.get('qrContent');
+        if (qrContent) {
+            document.getElementById("qrContentInput").value = qrContent;
+            document.getElementById("userIdInput").focus(); // 自动聚焦用户ID输入框
+        }
+    };
+
+    // ========== 1. 生成二维码（适配路径参数，保留自动填充） ==========
+    async function generateQrCode() {
+        const activityId = document.getElementById("activityIdInput").value;
+        const generateResult = document.getElementById("generateResult");
+        const qrCodeImg = document.getElementById("qrCodeImg");
+        const qrContentHidden = document.getElementById("qrContentHidden");
+        const qrContentInput = document.getElementById("qrContentInput");
+        const generateDebug = document.getElementById("generateDebug");
+
+        // 清空所有状态
+        [generateResult, qrCodeImg, generateDebug].forEach(el => el.innerHTML = "");
+        generateResult.className = "result";
+
+        // 基础参数校验
+        if (!activityId || activityId <= 0) {
+            generateResult.className = "result error";
+            generateResult.innerHTML = "❌ 活动ID必须为正整数";
+            return;
+        }
+
+        // 构造最终请求URL（路径参数方式，匹配你的Controller）
+        const finalUrl = `${GENERATE_QR_API}/${activityId}`;
+        generateDebug.innerHTML = `🔍 实际请求URL：${finalUrl}`;
+
+        try {
+            // 发起GET请求
+            const response = await fetch(finalUrl, {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                credentials: "include" // 自动携带Cookie，防止401
+            });
+
+            // 打印调试信息
+            generateDebug.innerHTML += `<br>📌 响应状态码：${response.status}`;
+            const resText = await response.text();
+            generateDebug.innerHTML += `<br>📝 原始响应内容：${resText}`;
+
+            // 解析JSON响应
+            const res = JSON.parse(resText);
+
+            if (res.code === 200) {
+                // 空值判断 + 数据校验
+                if (!res.data || !res.data.qrCodeBase64 || !res.data.qrContent) {
+                    generateResult.className = "result error";
+                    generateResult.innerHTML = "❌ 后端返回数据不完整，请检查活动ID是否有报名记录";
+                    return;
+                }
+
+                // 成功展示二维码
+                generateResult.className = "result success";
+                generateResult.innerHTML = `✅ 二维码生成成功！<br>二维码URL：${res.data.qrContent}`;
+                qrCodeImg.innerHTML = `<img src="data:image/png;base64,${res.data.qrCodeBase64}" alt="签到二维码">`;
+
+                // 核心：提取二维码内容中的核心标识（club_activity_sign_3），而非完整URL
+                let coreQrContent = res.data.qrContent;
+                if (res.data.qrContent.includes("?qrContent=")) {
+                    // 从URL中提取核心标识（适配后端生成的带IP的URL）
+                    const urlParams = new URLSearchParams(res.data.qrContent.split('?')[1]);
+                    coreQrContent = urlParams.get('qrContent');
+                }
+
+                // 填充隐藏域和输入框（供签到使用）
+                qrContentHidden.value = coreQrContent;
+                qrContentInput.value = coreQrContent;
+            } else {
+                generateResult.className = "result error";
+                generateResult.innerHTML = `❌ 生成失败：${res.msg || "未知错误"}`;
+            }
+        } catch (error) {
+            generateResult.className = "result error";
+            generateResult.innerHTML = `❌ 接口调用失败：${error.message}`;
+            generateDebug.innerHTML += `<br>❌ 异常信息：${error.stack || error.message}`;
+        }
+    }
+
+    // ========== 2. 扫码签到（POST请求，保留调试信息） ==========
+    async function scanSign() {
+        const qrContent = document.getElementById("qrContentHidden").value || document.getElementById("qrContentInput").value.trim();
+        const userId = document.getElementById("userIdInput").value;
+        const signResult = document.getElementById("signResult");
+        const signDebug = document.getElementById("signDebug");
+
+        // 清空所有状态
+        [signResult, signDebug].forEach(el => el.innerHTML = "");
+        signResult.className = "result";
+
+        // 基础参数校验
+        if (!qrContent) {
+            signResult.className = "result error";
+            signResult.innerHTML = "❌ 请先生成二维码/输入扫码内容！";
+            return;
+        }
+        if (!userId || userId <= 0) {
+            signResult.className = "result error";
+            signResult.innerHTML = "❌ 用户ID必须为正整数";
+            return;
+        }
+
+        // 构造请求参数
+        const requestData = {
+            qrContent: qrContent,
+            userId: Number(userId),
+            signIp: "127.0.0.1"
+        };
+        signDebug.innerHTML = `🔍 请求参数：${JSON.stringify(requestData)}`;
+
+        try {
+            // 发起POST请求
+            const response = await fetch(SCAN_SIGN_API, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify(requestData)
+            });
+
+            // 打印调试信息
+            signDebug.innerHTML += `<br>📌 响应状态码：${response.status}`;
+            const resText = await response.text();
+            signDebug.innerHTML += `<br>📝 原始响应内容：${resText}`;
+
+            // 解析响应
+            const res = JSON.parse(resText);
+            if (res.code === 200) {
+                signResult.className = "result success";
+                signResult.innerHTML = `✅ ${res.msg || "签到成功！"}`;
+            } else {
+                signResult.className = "result error";
+                signResult.innerHTML = `❌ 签到失败：${res.msg || "未知错误"}`;
+            }
+        } catch (error) {
+            signResult.className = "result error";
+            signResult.innerHTML = `❌ 签到调用失败：${error.message}`;
+            signDebug.innerHTML += `<br>❌ 异常信息：${error.stack || error.message}`;
+        }
+    }
+</script>
+</body>
+</html>

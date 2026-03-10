@@ -30,4 +30,11 @@ public class ActivityJoin {
 
     @TableField("audit_remark")
     private String auditRemark; // 审核备注
+
+    @TableField("operate_user_id")
+    private Long operateUserId;  //操作人ID
+
+    @TableField("operate_user_name")
+    private String operateUserName; //操作人姓名
+
 }

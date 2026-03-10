@@ -42,15 +42,15 @@ public class SysUserController {
         return Result.success(registerVO);
     }
 
-    /**
-     * 登录接口（公开访问，无需登录）
-     */
-    @Operation(summary = "登录")
-    @PostMapping("/login")
-    public Result<LoginVO> login(@Valid @RequestBody SysUserLoginDTO dto) {
-        LoginVO loginVO = sysUserService.login(dto);
-        return Result.success(loginVO);
-    }
+//    /**
+//     * 登录接口（公开访问，无需登录）
+//     */
+//    @Operation(summary = "登录")
+//    @PostMapping("/login")
+//    public Result<LoginVO> login(@Valid @RequestBody SysUserLoginDTO dto) {
+//        LoginVO loginVO = sysUserService.login(dto);
+//        return Result.success(loginVO);
+//    }
 
     /**
      * 退出登录接口（需要登录）
