@@ -26,4 +26,7 @@ public interface ActivityInfoService extends IService<ActivityInfo> {
 
     // 5. 删除活动（仅草稿状态可删）
     Result<?> deleteActivity(Long id);
+
+    //老师审核活动
+    Result<?> auditActivity(Long id, Integer status);
 }

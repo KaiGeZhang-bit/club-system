@@ -1,8 +1,10 @@
 package com.college.club.common.vo;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 public class Result<T> {
     private int code;
     private String msg;

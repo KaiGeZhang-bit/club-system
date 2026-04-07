@@ -12,9 +12,11 @@ import com.college.club.dto.ActivityJoinDTO;
 import com.college.club.dto.ScanSignReqDTO;
 import com.college.club.entity.ActivityInfo;
 import com.college.club.entity.ActivityJoin;
+import com.college.club.entity.SysUser;
 import com.college.club.mapper.ActivityInfoMapper;
 import com.college.club.mapper.ActivityJoinMapper;
 import com.college.club.service.ActivityJoinService;
+import com.college.club.service.SysUserService;
 import com.college.club.util.QrCodeUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +46,9 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
     @Resource
     private ActivityJoinMapper activityJoinMapper;
 
+    @Resource
+    private SysUserService sysUserService;
+
     //二维码业务前缀（区分本系统签到二维码，防止篡改）
     private static final String QR_CONTENT_PREFIX = "club_activity_sign_";
     //局域网IP
@@ -52,9 +57,9 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
 
     // 报名活动的核心逻辑
     @Override
-    public Result<?> joinActivity(ActivityJoinDTO dto) {
+    public Result<?> joinActivity(Long activityId,Long userId) {
         // 1. 查活动是否存在
-        ActivityInfo activity = activityInfoMapper.selectById(dto.getActivityId());
+        ActivityInfo activity = activityInfoMapper.selectById(activityId);
         if (activity == null) {
             throw BusinessException.businessError("活动不存在");
         }
@@ -64,7 +69,7 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
         }
         // 3. 查是否重复报名（同一个用户不能报同一个活动）
         QueryWrapper<ActivityJoin> query = new QueryWrapper<>();
-        query.eq("activity_id", dto.getActivityId()).eq("user_id", dto.getUserId());
+        query.eq("activity_id", activityId).eq("user_id", userId);
         ActivityJoin existingJoin = baseMapper.selectOne(query);
         if (existingJoin != null) {
             throw BusinessException.businessError("你已报名该活动，无需重复报名");
@@ -73,12 +78,21 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
         if (activity.getJoinNum() >= activity.getMaxNum()) {
             throw BusinessException.businessError("活动报名人数已满，无法报名");
         }
-        // 5. 保存报名记录到你的activity_join表
+        //4.获取报名用户真实姓名
+        SysUser user = sysUserService.getById(userId);
+        String username = user != null ? user.getUsername() : null;
+
         ActivityJoin join = new ActivityJoin();
-        BeanUtils.copyProperties(dto, join);
-        join.setJoinTime(LocalDateTime.now()); // 报名时间=现在
-        join.setSignStatus(0); // 签到状态默认0（未签到）
+        // 5. 保存报名记录到你的activity_join表
+        join.setActivityId(activityId);
+        join.setUserId(userId);
+        join.setUserName(username);
+        join.setJoinTime(LocalDateTime.now());    // 报名时间
+        join.setSignStatus(0);                    // 未签到
+        // ====================== 修复完成 ======================
+
         baseMapper.insert(join);
+
         // 6. 活动已报名人数+1
         activity.setJoinNum(activity.getJoinNum() + 1);
         activity.setUpdateTime(LocalDateTime.now());
@@ -89,15 +103,15 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
 
     //取消报名的核心逻辑
     @Override
-    public Result<?> cancelJoin(ActivityJoinDTO dto) {
+    public Result<?> cancelJoin(Long activityId,Long userId) {
         //1.是否有报名记录
         QueryWrapper<ActivityJoin> query = new QueryWrapper<>();
-        query.eq("activity_id", dto.getActivityId()).eq("user_id", dto.getUserId());
+        query.eq("activity_id", activityId).eq("user_id", userId);
         ActivityJoin existingJoin = baseMapper.selectOne(query);
         if (existingJoin == null) {
             throw BusinessException.businessError("你未报名该活动，无法取消");
         }
-        ActivityInfo activity = activityInfoMapper.selectById(dto.getActivityId());
+        ActivityInfo activity = activityInfoMapper.selectById(activityId);
         if (activity.getStatus() != 1 && activity.getStatus() != 2) {
             throw BusinessException.businessError("活动已结束，无法取消报名");
         }
@@ -253,15 +267,14 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Result<?> scanSign(ScanSignReqDTO reqDTO) {
+    public Result<?> scanSign(ScanSignReqDTO reqDTO,Long userId) {
         // 1. 基础参数校验
-        if (reqDTO == null || !StringUtils.hasText(reqDTO.getQrContent()) || reqDTO.getUserId() == null || reqDTO.getUserId() <= 0) {
+        if (reqDTO == null || !StringUtils.hasText(reqDTO.getQrContent()) || userId== null || userId <= 0) {
             return Result.failBusiness("签到参数不完整");
         }
 
         // 2. 提取参数
         String qrContent = reqDTO.getQrContent();
-        Long userId = reqDTO.getUserId();
         String signIp = StringUtils.hasText(reqDTO.getSignIp()) ? reqDTO.getSignIp() : "未知IP";
 
         // 3. 解析二维码内容（完全适配你的"前缀+活动ID"逻辑）

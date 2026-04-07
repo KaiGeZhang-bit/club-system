@@ -10,7 +10,9 @@ public class ActivityJoinDTO {
     @NotNull(message = "用户ID不能为空")
     private Long userId;
     @NotNull(message = "用户名不能为空")
-    private String userName;@NotNull(message = "审核状态不能为空（1通过/2驳回）")
+    private String userName;
+
+    @NotNull(message = "审核状态不能为空（1通过/2驳回）")
     private Integer auditStatus; // 审核状态：1通过/2驳回
 
     @NotNull(message = "审核人ID不能为空")

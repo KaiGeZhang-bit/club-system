@@ -12,9 +12,9 @@ import java.util.List;
 
 public interface ActivityJoinService extends IService<ActivityJoin> {
     //报名活动
-    Result<?> joinActivity(ActivityJoinDTO dto);
+    Result<?> joinActivity(Long clubId, Long userId);
     //取消报名
-    Result<?> cancelJoin(ActivityJoinDTO dto);
+    Result<?> cancelJoin(Long activityId, Long userId);
     //查询指定活动的报名名单
     Result<List<ActivityJoinListVO>> getJoinListByActivityId(Long activityId);
 
@@ -26,5 +26,5 @@ public interface ActivityJoinService extends IService<ActivityJoin> {
     //生成签到二维码
     Result<ActivitySignQrVo> generateSignQr(Long activityId);
     //二维码签到
-    Result<?> scanSign(ScanSignReqDTO reqDTO);
+    Result<?> scanSign(ScanSignReqDTO reqDTO,Long userId);
 }

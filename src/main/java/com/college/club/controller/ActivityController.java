@@ -20,6 +20,20 @@ public class ActivityController {
     @Resource
     private ActivityInfoService activityInfoService;
 
+
+    @Operation(summary = "老师审核活动")
+    @PutMapping("/audit/{id}")
+    public Result<?> auditActivity(
+            @Parameter(description = "活动ID") @PathVariable Long id,
+            @Parameter(description = "审核结果：1通过，4驳回") @RequestParam Integer status) {
+        // 校验状态只能为1或4
+        if (status != 1 && status != 4) {
+            return Result.failParam("审核状态只能为1（通过）或4（驳回）");
+        }
+        // 调用 Service 层方法，并校验当前用户是否为老师，以及活动状态是否为0
+        return activityInfoService.auditActivity(id, status);
+    }
+
     // 1. 创建活动（已显示）
     @Operation(summary = "创建活动")
     @PostMapping("/create")

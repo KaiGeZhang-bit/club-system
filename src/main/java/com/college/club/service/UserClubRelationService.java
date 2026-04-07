@@ -7,7 +7,7 @@ import com.college.club.entity.UserClubRelation;
 
 public interface UserClubRelationService extends IService<UserClubRelation> {
     //加入社团
-    Result<?> joinClub(JoinClubDTO dto);
+    Result<?> joinClub(JoinClubDTO dto, Long userId);
     //加入社团审核
     Result<String> auditJoinApply(ClubJoinAuditDTO dto);
     //查看我的加入社团申请

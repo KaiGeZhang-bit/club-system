@@ -61,4 +61,22 @@ public class ClubAnnouncementController {
     public Result<?> getAnnouncementById(@PathVariable Long id) {
         return announcementService.getAnnouncementById(id);
     }
+
+
+    /**
+     * 分页查询公告
+     */
+    @GetMapping("/page")
+    @Operation(summary = "分页查询公告")
+    public Result<?> getAnnouncementPage(
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Long clubId,
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) Integer isTop
+    ) {
+        //调用Service层的分页方法返回结果给前端
+        return announcementService.getAnnouncementPage(pageNum, pageSize, clubId, status, isTop);
+
+    }
 }

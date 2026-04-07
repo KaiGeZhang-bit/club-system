@@ -4,6 +4,8 @@ package com.college.club.controller;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ClubQuitAuditDTO;
 import com.college.club.dto.QuitClubDTO;
+import com.college.club.entity.SysUser;
+import com.college.club.service.SysUserService;
 import com.college.club.service.UserClubQuitService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,9 +21,14 @@ public class UserClubQuitController {
     @Resource
     private UserClubQuitService userClubQuitService;
 
+    @Resource
+    private SysUserService sysUserService;
+
     @PostMapping("/submit")
     @Operation(summary = "退出社团")
     public Result<?> submitQuitClub(@Validated @RequestBody QuitClubDTO quitClubDTO) {
+        SysUser  currentUser = sysUserService.getCurrentUser();
+        Long userId = currentUser.getId();
         // 直接调用Service方法，无需处理用户ID（Service内部自动获取）
         return userClubQuitService.QuitClub(quitClubDTO);
     }

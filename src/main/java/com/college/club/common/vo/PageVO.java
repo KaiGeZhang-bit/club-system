@@ -1,6 +1,8 @@
 package com.college.club.common.vo;
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.util.List;
 
 /**
@@ -8,6 +10,7 @@ import java.util.List;
  * @param <T> 数据类型
  */
 @Data
+@NoArgsConstructor
 public class PageVO<T> {
     private List<T> records; // 当前页数据列表
     private long total; // 总记录数

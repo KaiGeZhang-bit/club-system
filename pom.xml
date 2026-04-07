@@ -12,7 +12,7 @@
     <artifactId>club-demo</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>club-demo</name>
-    <description>社团活动管理系统（适合学习/实习展示）</description>
+    <description>社团活动管理系统</description>
     <properties>
         <java.version>17</java.version>
         <lombok.version>1.18.32</lombok.version>
@@ -109,7 +109,31 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
+
+        <!-- Redis 支持 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Spring Cache 抽象 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-cache</artifactId>
+        </dependency>
+
+        <!-- Spring Boot 2.x/3.x 通用 Redis 依赖 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
     </dependencies>
+
 
     <build>
         <plugins>

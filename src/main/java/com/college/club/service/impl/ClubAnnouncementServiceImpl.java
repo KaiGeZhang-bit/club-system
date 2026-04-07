@@ -1,6 +1,7 @@
 package com.college.club.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.college.club.entity.ClubAnnouncement;
 import com.college.club.entity.ClubInfo;
@@ -98,4 +99,49 @@ public class ClubAnnouncementServiceImpl extends ServiceImpl<ClubAnnouncementMap
         }
         return Result.success(announcement);
     }
+
+
+    /**
+     * 分页查询公告的实现方法
+     */
+
+    @Override
+    public Result<?> getAnnouncementPage(Integer pageNum, Integer pageSize,Long clubId,Integer status,Integer isTop) {
+
+        //1.设置分页默认值（防止前端不传参数导致报错
+        if (pageNum == null || pageSize == null) {
+            pageNum = 1;
+            pageSize = 10;
+        }
+
+        //2.创建Mybatis-Plus的分页对象（核心：告诉插件要查第几页、每页几条
+        Page<ClubAnnouncement> page = new Page<>(pageNum, pageSize);
+
+        //3.构建查询条件（只筛选非null的参数，不传的条件自动忽略）
+        LambdaQueryWrapper<ClubAnnouncement> wrapper = new LambdaQueryWrapper<>();
+        //条件1.筛选指定社团的公告
+        if (clubId != null) {
+            wrapper.eq(ClubAnnouncement::getClubId, clubId);
+        }
+        //条件2.筛选指定状态的公告
+        if (status != null) {
+            wrapper.eq(ClubAnnouncement::getStatus, status);
+        }
+        //条件3.筛选是否置顶的公告
+        if (isTop != null) {
+            wrapper.eq(ClubAnnouncement::getIsTop, isTop);
+        }
+
+        //4.排序规则（先按置顶降序，再按发布时间降序，后续补充字段后生效
+        wrapper.orderByDesc(ClubAnnouncement::getIsTop)
+                .orderByDesc(ClubAnnouncement::getPublishTime);
+
+        //5.执行分页查询
+        Page<ClubAnnouncement> ResulttPage = this.page(page, wrapper);
+
+        //6.返回结果
+        return Result.success(ResulttPage);
+
+    }
+
 }

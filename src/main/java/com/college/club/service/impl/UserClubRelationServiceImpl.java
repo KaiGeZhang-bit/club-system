@@ -40,7 +40,7 @@ public class UserClubRelationServiceImpl extends ServiceImpl<UserClubRelationMap
 
     // 加入社团的核心逻辑（移除人数相关所有逻辑）
     @Override
-    public Result<?> joinClub(JoinClubDTO dto) {
+    public Result<?> joinClub(JoinClubDTO dto, Long userId) {
         // 1. 查社团是否存在
         ClubInfo club = clubInfoMapper.selectById(dto.getClubId());
         if (club == null) {
@@ -52,7 +52,7 @@ public class UserClubRelationServiceImpl extends ServiceImpl<UserClubRelationMap
         }
         // 3. 查是否重复加入/重复申请（同一个用户不能重复操作）
         QueryWrapper<UserClubRelation> query = new QueryWrapper<>();
-        query.eq("user_id", dto.getUserId()).eq("club_id", dto.getClubId());
+        query.eq("user_id", userId).eq("club_id", dto.getClubId());
         UserClubRelation existingRelation = baseMapper.selectOne(query);
         if (existingRelation != null) {
             // 已加入（1）提示重复，待审核（0）提示申请已提交
@@ -64,6 +64,7 @@ public class UserClubRelationServiceImpl extends ServiceImpl<UserClubRelationMap
         }
         // 4. 保存加入社团记录到user_club_relation表（仅保留核心记录逻辑）
         UserClubRelation relation = new UserClubRelation();
+        relation.setUserId(userId);
         BeanUtils.copyProperties(dto, relation); // 复制DTO字段到实体
         relation.setJoinTime(LocalDateTime.now()); // 加入时间=现在
         relation.setStatus(0); // 加入状态默认0（待审核）

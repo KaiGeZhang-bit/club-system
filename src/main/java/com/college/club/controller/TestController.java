@@ -7,6 +7,7 @@ import com.college.club.service.ActivityInfoService;
 import com.college.club.service.ClubInfoService;
 import com.college.club.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -53,6 +54,15 @@ public class TestController {
         user.setUpdateTime(LocalDateTime.now());
 
         return "当前功能暂未启用";
+    }
+
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @GetMapping("/test-redis")
+    public String testRedis() {
+        redisTemplate.opsForValue().set("test", "hello");
+        return (String) redisTemplate.opsForValue().get("test");
     }
 
 }

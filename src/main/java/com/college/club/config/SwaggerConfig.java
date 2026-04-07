@@ -1,44 +1,47 @@
 package com.college.club.config;
 
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-
+import io.swagger.v3.oas.models.Components; // 优化导入（不用写全类名）
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Swagger3 + Knife4j 配置类（适配Spring Boot3）
- * 核心：开启JSESSIONID Cookie自动携带，解决登录后401问题
+ * 适配 Knife4j 4.4.0 的 OpenAPI 3 配置（解决授权按钮不显示、Token 传递问题）
  */
 @Configuration
 public class SwaggerConfig {
 
-    /**
-     * 配置文档基本信息
-     */
     @Bean
     public OpenAPI customOpenAPI() {
-        // 定义安全方案：指定携带JSESSIONID Cookie作为身份凭证
-        SecurityScheme securityScheme = new SecurityScheme()
-                .type(SecurityScheme.Type.APIKEY) // 类型：API密钥
-                .in(SecurityScheme.In.COOKIE)     // 携带位置：Cookie
-                .name("JSESSIONID");              // Cookie名称：固定为JSESSIONID（Spring Session默认名）
+        // 1. 定义JWT安全方案（适配Knife4j 4.4.0，显式指定所有参数）
+        String securitySchemeName = "BearerAuth"; // 授权方案ID（全局唯一）
+        SecurityScheme jwtScheme = new SecurityScheme()
+                .type(SecurityScheme.Type.HTTP)       // 类型：HTTP
+                .scheme("bearer")                     // 认证方案：bearer
+                .bearerFormat("JWT")                 // 格式：JWT（标注说明）
+                .in(SecurityScheme.In.HEADER)        // 传递位置：请求头（显式指定，4.4.0必填）
+                .name("Authorization");              // 请求头名称（和过滤器一致）
 
-        // 全局开启安全方案：所有接口自动携带上述Cookie
-        SecurityRequirement securityRequirement = new SecurityRequirement().addList("JSESSIONID");
+        // 2. 全局授权要求（绑定上面的授权方案ID）
+        SecurityRequirement securityRequirement = new SecurityRequirement()
+                .addList(securitySchemeName); // 必须和上面的securitySchemeName一致
 
+        // 3. 构建OpenAPI文档（适配Knife4j 4.4.0）
         return new OpenAPI()
-                // 文档标题、版本、描述
+                // 文档基础信息（非必需，但完善后更易读）
                 .info(new Info()
-                        .title("高校社团管理系统API文档")
+                        .title("高校社团管理系统API")
                         .version("v1.0")
-                        .description("基于Spring Boot3 + Security的社团管理系统，支持JSON登录、用户信息管理"))
-                // 配置安全组件（Cookie）
-                .components(new Components().addSecuritySchemes("JSESSIONID", securityScheme))
-                // 全局应用安全方案
-                .addSecurityItem(securityRequirement);
+                        .description("基于Spring Boot 3 + JWT + Knife4j 4.4.0的API文档")
+                        .contact(new Contact().name("开发团队").email("dev@example.com")))
+                // 4. 注册安全组件（核心：Knife4j 4.4.0必须显式注册）
+                .components(new Components()
+                        .addSecuritySchemes(securitySchemeName, jwtScheme))
+                // 5. 全局启用JWT授权（所有接口默认带Authorization请求头）
+                .security(java.util.Collections.singletonList(securityRequirement));
     }
 }

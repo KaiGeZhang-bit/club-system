@@ -1,19 +1,28 @@
 package com.college.club.controller;
 
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.college.club.common.exception.BusinessException;
+import com.college.club.common.vo.ClubInfoVO;
+import com.college.club.common.vo.PageVO;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ClubAuditDTO;
 import com.college.club.dto.CreateClubDTO;
 import com.college.club.dto.JoinClubDTO;
+import com.college.club.entity.ClubInfo;
+import com.college.club.entity.SysUser;
 import com.college.club.service.ClubInfoService;
+import com.college.club.service.SysUserService;
 import com.college.club.service.UserClubRelationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+
+
+
 
 /**
  * 社团管理控制器（处理社团创建、加入等请求）
@@ -32,6 +41,9 @@ public class ClubController {
     @Resource
     private UserClubRelationService userClubRelationService;
 
+    @Resource
+    private SysUserService sysUserService;
+
     /**
      * 创建社团接口
      * 路径：/api/club/create
@@ -41,8 +53,11 @@ public class ClubController {
     @Operation(summary = "创建社团")
     @PostMapping("/create")
     public Result<?> createClub(@Valid @RequestBody CreateClubDTO dto) {
+
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long userId = currentUser.getId();
         // 调用业务层创建社团的方法，返回结果给前端
-        return clubInfoService.createClub(dto);
+        return clubInfoService.createClub(dto,userId);
     }
 
     /**
@@ -54,8 +69,10 @@ public class ClubController {
     @Operation(summary = "加入社团")
     @PostMapping("/join")
     public Result<?> joinClub(@Valid @RequestBody JoinClubDTO dto) {
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long userId = currentUser.getId();
         // 调用业务层加入社团的方法，返回结果给前端
-        return userClubRelationService.joinClub(dto);
+        return userClubRelationService.joinClub(dto,userId);
     }
 
 
@@ -67,6 +84,10 @@ public class ClubController {
     @Operation(summary = "社团审核")
     @PostMapping("/audit")
     public Result<String> auditClub(@Valid @RequestBody ClubAuditDTO dto) {
+
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long userId = currentUser.getId();
+
         // 调用业务层的审核方法，返回结果给前端
         return clubInfoService.auditClub(dto);
     }
@@ -82,4 +103,53 @@ public class ClubController {
         // 调用业务层修改社团信息的方法，返回结果给前端
         return clubInfoService.updateClub(dto);
     }
+
+    //社团列表接口
+
+    @Operation(summary = "社团列表")
+    @GetMapping("list")
+    public Result<PageVO<ClubInfoVO>> getClubList(
+            @RequestParam(required = false) Integer status,
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize
+
+    ) {
+
+        return clubInfoService.getClubList(status,pageNum,pageSize);
+    }
+
+    //社团详情接口
+
+    @Operation(summary = "社团详情")
+    @GetMapping("/{id}")
+    public Result<ClubInfoVO> getClubDetail(@PathVariable Long id) {
+        return clubInfoService.getClubDetail(id);
+    }
+
+
+    //待审核社团列表
+    @Operation(summary = "待审核社团列表")
+    @GetMapping("/audit-list")
+    public Result<PageVO<ClubInfoVO>> getAuditList(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        return clubInfoService.getAuditList(pageNum, pageSize);
+    }
+
+    @Operation(summary = "我的社团")
+    @GetMapping("/my")
+    public Result<PageVO<ClubInfoVO>> getMyClubs(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        return clubInfoService.getMyClubs(pageNum, pageSize);
+    }
+
+    @GetMapping("/my/manage")
+    public Result<?> getMyManageClubs() {
+        return clubInfoService.getMyManageClubs();
+    }
+
+
+
+
 }

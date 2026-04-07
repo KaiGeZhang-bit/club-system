@@ -138,13 +138,31 @@ public class ActivityInfoServiceImpl extends ServiceImpl<ActivityInfoMapper, Act
         SysUser currentUser = sysUserService.getCurrentUser();
         Long userId  = currentUser.getId();
 
+        ActivityInfo activity = baseMapper.selectById(id);
 
-        // 校验状态是否合法
-        if (!List.of(0, 1, 2, 3).contains(status)) {
-            throw BusinessException.paramError("状态不合法（可选：0待审核/1已发布/2进行中/3已结束）");
+        // 老师审核
+        if (currentUser.getRole() == 2) {
+            // 只能处理待审核的活动，且只能改为1或4
+            if (activity.getStatus() != 0) {
+                throw BusinessException.businessError("只有待审核的活动才能审核");
+            }
+            if (status != 1 && status != 4) {
+                throw BusinessException.businessError("老师只能将活动设为已发布(1)或已取消(4)");
+            }
+            activity.setStatus(status);
+            activity.setUpdateTime(LocalDateTime.now());
+            baseMapper.updateById(activity);
+            return Result.success("审核成功");
         }
 
-        ActivityInfo activity = baseMapper.selectById(id);
+
+
+        // 校验状态是否合法
+        if (!List.of(0, 1, 2, 3,4).contains(status)) {
+            throw BusinessException.paramError("状态不合法（可选：0待审核/1已发布/2进行中/3已结束/已取消）");
+        }
+
+
         if (activity == null) {
             throw BusinessException.businessError("活动不存在");
         }
@@ -187,5 +205,27 @@ public class ActivityInfoServiceImpl extends ServiceImpl<ActivityInfoMapper, Act
 
 
         return Result.success("活动删除成功");
+    }
+
+    //老师审核活动
+    @Override
+    public Result<?> auditActivity(Long id, Integer status) {
+        // 获取当前登录用户，验证是否为老师
+        SysUser currentUser = sysUserService.getCurrentUser();
+        if (currentUser.getRole() != 2) {
+            throw BusinessException.businessError("只有老师可以审核活动");
+        }
+        ActivityInfo activity = baseMapper.selectById(id);
+        if (activity == null) {
+            throw BusinessException.businessError("活动不存在");
+        }
+        if (activity.getStatus() != 0) {
+            throw BusinessException.businessError("只有待审核的活动才能被审核");
+        }
+        // 更新状态
+        activity.setStatus(status);
+        activity.setUpdateTime(LocalDateTime.now());
+        baseMapper.updateById(activity);
+        return Result.success("审核成功");
     }
 }

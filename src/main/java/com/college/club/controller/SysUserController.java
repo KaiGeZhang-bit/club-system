@@ -3,17 +3,16 @@ package com.college.club.controller;
 import com.college.club.common.vo.LoginVO;
 import com.college.club.common.vo.RegisterVO;
 import com.college.club.common.vo.Result; // 你项目的统一返回类
+import com.college.club.common.vo.UserInfoVO;
 import com.college.club.dto.ChangePasswordDTO;
 import com.college.club.dto.SysUserLoginDTO;
 import com.college.club.dto.SysUserRegisterDTO;
 import com.college.club.dto.UserProfileUpdateDTO;
+import com.college.club.entity.SysUser;
 import com.college.club.service.SysUserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -51,6 +50,20 @@ public class SysUserController {
 //        LoginVO loginVO = sysUserService.login(dto);
 //        return Result.success(loginVO);
 //    }
+
+
+
+    @GetMapping("/info")
+    public Result<UserInfoVO> getUserInfo() {
+        SysUser user = sysUserService.getCurrentUser();
+        UserInfoVO vo = new UserInfoVO();
+        vo.setUsername(user.getUsername());
+        vo.setName(user.getName());
+        vo.setRole(user.getRole());
+        vo.setPhone(user.getPhone());
+        vo.setAvatar(user.getAvatar());
+        return Result.success(vo);
+    }
 
     /**
      * 退出登录接口（需要登录）

@@ -12,10 +12,6 @@ public class ScanSignReqDTO {
     @NotBlank(message = "二维码内容不能为空")
     private String qrContent;
 
-    //用户ID
-    @NotNull(message = "用户ID不能为空")
-    private Long userId;
-
 
     //签到Ip
     private String SignIp;

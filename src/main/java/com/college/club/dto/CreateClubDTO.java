@@ -17,8 +17,8 @@ public class CreateClubDTO {
 
     private String intro; // 社团简介（可选）
 
-    @NotNull(message = "负责人ID不能为空")
-    private Long leaderId; // 负责人ID（关联sys_user.id）
+//    @NotNull(message = "负责人ID不能为空")
+//    private Long leaderId; // 负责人ID（关联sys_user.id）
 
     @NotBlank(message = "负责人姓名不能为空")
     private String leaderName; // 负责人姓名

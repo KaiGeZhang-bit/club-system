@@ -37,4 +37,11 @@ public interface ClubAnnouncementService extends IService<ClubAnnouncement> {
      * @return 公告详情
      */
     Result<?> getAnnouncementById(Long id);
+
+
+    /**
+     * 分页查询公告内容
+
+     */
+    Result<?> getAnnouncementPage(Integer pageNum, Integer pageSize,Long clubId,Integer status,Integer isTop);
 }
