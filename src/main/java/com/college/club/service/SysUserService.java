@@ -1,10 +1,10 @@
 package com.college.club.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.college.club.common.vo.LoginVO;
 import com.college.club.common.vo.RegisterVO;
+import com.college.club.common.vo.Result;
+import com.college.club.dto.UserAuditDTO;
 import com.college.club.dto.ChangePasswordDTO;
-import com.college.club.dto.SysUserLoginDTO; // 你项目的登录DTO
 import com.college.club.dto.SysUserRegisterDTO; // 你项目的注册DTO
 import com.college.club.dto.UserProfileUpdateDTO;
 import com.college.club.entity.SysUser;
@@ -23,6 +23,11 @@ public interface SysUserService extends IService<SysUser> {
     boolean updateUserProfile(UserProfileUpdateDTO profileDTO);
 
     boolean ChangePassword(ChangePasswordDTO changePasswordDTO);
+
+    Result<?> auditUser(UserAuditDTO dto);
+
+
+    Result<?> getPendingUsers(Integer pageNum, Integer pageSize);
 
 }
 

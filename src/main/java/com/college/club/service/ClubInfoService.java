@@ -23,4 +23,7 @@ public interface ClubInfoService extends IService<ClubInfo> {
     Result<PageVO<ClubInfoVO>> getMyClubs(Integer pageNum, Integer pageSize);
 
     Result<?> getMyManageClubs();
+
+    Result<PageVO<ClubInfoVO>> getMyManagedClubs(Integer pageNum, Integer pageSize);
+
 }

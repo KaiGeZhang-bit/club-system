@@ -1,6 +1,10 @@
 package com.college.club.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.college.club.common.vo.MessageVO;
+import com.college.club.common.vo.PageVO;
 import com.college.club.common.vo.Result;
 import com.college.club.entity.ClubInfo;
 import com.college.club.entity.ClubMessage;
@@ -10,7 +14,9 @@ import com.college.club.mapper.ClubMessageMapper;
 import com.college.club.mapper.SysUserMapper;
 import com.college.club.mapper.UserClubRelationMapper;
 import com.college.club.service.ClubMessageService;
+import com.college.club.service.SysUserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -20,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -32,6 +39,8 @@ public class ClubMessageServiceImpl extends ServiceImpl<ClubMessageMapper, ClubM
     private ClubInfoMapper clubInfoMapper;
     @Autowired
     private UserClubRelationMapper userClubRelationMapper;
+    @Autowired
+    private SysUserService sysUserService;
 
     @Override
     public Result<String> sendBatchMessage(Long senderId, Long clubId, String content) {
@@ -80,6 +89,7 @@ public class ClubMessageServiceImpl extends ServiceImpl<ClubMessageMapper, ClubM
             Date now = new Date();
             for (Long receiverId : memberIds) {
                 ClubMessage message = new ClubMessage();
+                message.setSenderId(senderId);
                 message.setReceiverId(receiverId);
                 message.setClubId(clubId);
                 message.setClubName(clubName);
@@ -142,5 +152,126 @@ public class ClubMessageServiceImpl extends ServiceImpl<ClubMessageMapper, ClubM
 
         // 2.4 未知角色：兜底提示
         return (Result<String>) Result.failBusiness("用户角色为" + userRole + "，无发送消息权限"); // 403
+    }
+
+    @Override
+    public Result<PageVO<MessageVO>> getSentMessages(Integer pageNum, Integer pageSize, Long clubId) {
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long senderId = currentUser.getId();
+
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1) {
+            pageSize = 10;
+        }
+
+        LambdaQueryWrapper<ClubMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClubMessage::getSenderId, senderId);
+        
+        if (clubId != null) {
+            wrapper.eq(ClubMessage::getClubId, clubId);
+        }
+        
+        wrapper.orderByDesc(ClubMessage::getCreateTime);
+
+        Page<ClubMessage> page = new Page<>(pageNum, pageSize);
+        Page<ClubMessage> resultPage = this.page(page, wrapper);
+
+        List<MessageVO> voList = resultPage.getRecords().stream()
+                .map(this::convertToMessageVO)
+                .collect(Collectors.toList());
+
+        PageVO<MessageVO> pageVO = new PageVO<>();
+        pageVO.setRecords(voList);
+        pageVO.setTotal(resultPage.getTotal());
+        pageVO.setPages(resultPage.getPages());
+        pageVO.setCurrent((int) resultPage.getCurrent());
+        pageVO.setSize((int) resultPage.getSize());
+
+        return Result.success(pageVO);
+    }
+
+    @Override
+    public Result<PageVO<MessageVO>> getReceivedMessages(Integer pageNum, Integer pageSize, Integer isRead) {
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long receiverId = currentUser.getId();
+
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1) {
+            pageSize = 10;
+        }
+
+        LambdaQueryWrapper<ClubMessage> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ClubMessage::getReceiverId, receiverId);
+        
+        if (isRead != null) {
+            wrapper.eq(ClubMessage::getIsRead, isRead);
+        }
+        
+        wrapper.orderByDesc(ClubMessage::getCreateTime);
+
+        Page<ClubMessage> page = new Page<>(pageNum, pageSize);
+        Page<ClubMessage> resultPage = this.page(page, wrapper);
+
+        List<MessageVO> voList = resultPage.getRecords().stream()
+                .map(this::convertToMessageVO)
+                .collect(Collectors.toList());
+
+        PageVO<MessageVO> pageVO = new PageVO<>();
+        pageVO.setRecords(voList);
+        pageVO.setTotal(resultPage.getTotal());
+        pageVO.setPages(resultPage.getPages());
+        pageVO.setCurrent((int) resultPage.getCurrent());
+        pageVO.setSize((int) resultPage.getSize());
+
+        return Result.success(pageVO);
+    }
+
+    @Override
+    public Result<String> markAsRead(Long messageId) {
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long receiverId = currentUser.getId();
+
+        ClubMessage message = this.getById(messageId);
+        if (message == null) {
+            return (Result<String>) Result.failBusiness("消息不存在");
+        }
+
+        if (!message.getReceiverId().equals(receiverId)) {
+            return (Result<String>) Result.failBusiness("无权操作此消息");
+        }
+
+        if (message.getIsRead() == 1) {
+            return Result.success("消息已是已读状态");
+        }
+
+        message.setIsRead(1);
+        this.updateById(message);
+
+        return Result.success("标记已读成功");
+    }
+
+    private MessageVO convertToMessageVO(ClubMessage message) {
+        MessageVO vo = new MessageVO();
+        BeanUtils.copyProperties(message, vo);
+
+        if (message.getSenderId() != null) {
+            SysUser sender = sysUserMapper.selectById(message.getSenderId());
+            if (sender != null) {
+                vo.setSenderName(sender.getName());
+            }
+        }
+
+        if (message.getReceiverId() != null) {
+            SysUser receiver = sysUserMapper.selectById(message.getReceiverId());
+            if (receiver != null) {
+                vo.setReceiverName(receiver.getName());
+            }
+        }
+
+        return vo;
     }
 }

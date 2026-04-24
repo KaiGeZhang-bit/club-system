@@ -299,9 +299,6 @@ public class ClubInfoServiceImpl extends ServiceImpl<ClubInfoMapper, ClubInfo> i
         return Result.success(pageVO);
     }
 
-
-
-
     @Override
     public Result<PageVO<ClubInfoVO>> getMyClubs(Integer pageNum, Integer pageSize) {
         SysUser currentUser = sysUserService.getCurrentUser();
@@ -371,6 +368,54 @@ public class ClubInfoServiceImpl extends ServiceImpl<ClubInfoMapper, ClubInfo> i
         List<ClubInfo> list = clubInfoMapper.selectList(wrapper);
         return Result.success(list);
     }
+
+
+
+    @Override
+    public Result<PageVO<ClubInfoVO>> getMyManagedClubs(Integer pageNum, Integer pageSize) {
+        SysUser currentUser = sysUserService.getCurrentUser();
+
+        // 构建查询条件：查询我是负责人或指导老师的社团
+        LambdaQueryWrapper<ClubInfo> wrapper = Wrappers.lambdaQuery();
+        wrapper.and(w -> w.eq(ClubInfo::getLeaderId, currentUser.getId())
+                        .or()
+                        .eq(ClubInfo::getTeacherId, currentUser.getId()))
+                .eq(ClubInfo::getStatus, 1)
+                .orderByDesc(ClubInfo::getCreateTime);
+
+        // 分页查询
+        Page<ClubInfo> page = new Page<>(pageNum, pageSize);
+        Page<ClubInfo> resultPage = this.page(page, wrapper);
+
+        // 转换为VO
+        List<ClubInfoVO> voList = resultPage.getRecords().stream().map(club -> {
+            ClubInfoVO vo = new ClubInfoVO();
+            BeanUtils.copyProperties(club, vo);
+
+            // 设置状态描述
+            switch (club.getStatus()) {
+                case 0: vo.setStatusDesc("待审核"); break;
+                case 1: vo.setStatusDesc("正常"); break;
+                case 2: vo.setStatusDesc("解散"); break;
+                default: vo.setStatusDesc("未知");
+            }
+
+            return vo;
+        }).collect(Collectors.toList());
+
+        // 封装分页结果
+        PageVO<ClubInfoVO> pageVO = new PageVO<>();
+        pageVO.setRecords(voList);
+        pageVO.setTotal(resultPage.getTotal());
+        pageVO.setPages(resultPage.getPages());
+        pageVO.setCurrent(pageNum);
+        pageVO.setSize(pageSize);
+
+        return Result.success(pageVO);
+    }
+
+
+
 
 
 

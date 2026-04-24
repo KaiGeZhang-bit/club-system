@@ -150,6 +150,17 @@ public class ClubController {
     }
 
 
+    @Operation(summary = "我管理的社团", description = "查询当前用户作为负责人或指导老师的社团列表")
+    @GetMapping("/my-managed")
+    public Result<PageVO<ClubInfoVO>> getMyManagedClubs(
+            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(defaultValue = "10") Integer pageSize) {
+        return clubInfoService.getMyManagedClubs(pageNum, pageSize);
+    }
+
+
+
+
 
 
 }

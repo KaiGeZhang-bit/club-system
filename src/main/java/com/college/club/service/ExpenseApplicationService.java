@@ -45,4 +45,6 @@ public interface ExpenseApplicationService extends IService<ExpenseApplication> 
      * @return 详情VO
      */
     ExpenseApplicationVO getApplicationDetail(Long applicationId);
+
+    void withdrawApplication(Long applicationId);
 }

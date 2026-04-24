@@ -4,10 +4,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.college.club.common.exception.BusinessException; // 用你项目里的异常类
-import com.college.club.common.vo.LoginVO;
 import com.college.club.common.vo.RegisterVO;
+import com.college.club.common.vo.Result;
+import com.college.club.dto.UserAuditDTO;
 import com.college.club.dto.ChangePasswordDTO;
-import com.college.club.dto.SysUserLoginDTO; // 你项目的登录DTO
 import com.college.club.dto.SysUserRegisterDTO; // 你项目的注册DTO
 import com.college.club.dto.UserProfileUpdateDTO;
 import com.college.club.entity.SysUser;
@@ -77,7 +77,6 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     @Override
 
     public RegisterVO register(SysUserRegisterDTO dto) {
-        // 新增：用户名和密码非空校验（可选，提升严谨性）
         if (dto.getUsername() == null || dto.getUsername().trim().isEmpty()) {
             throw BusinessException.businessError("用户名不能为空");
         }
@@ -85,44 +84,48 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             throw BusinessException.businessError("密码不能为空，且长度不能少于6位");
         }
 
-        // 1. 校验用户名是否已被占用（sys_user.username唯一）
         QueryWrapper<SysUser> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("username", dto.getUsername().trim());
         if (sysUserMapper.selectCount(queryWrapper) > 0) {
             throw BusinessException.businessError("用户名已被占用，请更换账号");
         }
 
-        // 2. 校验角色是否合法（0=学生，1=社团负责人，2=老师）- 修复异常信息
         if (dto.getRole() != 0 && dto.getRole() != 1 && dto.getRole() != 2) {
             throw BusinessException.businessError("角色非法，仅支持学生（0）、社团负责人（1）、老师（2）");
         }
 
-        // 3. 密码加密（使用容器统一的PasswordEncoder，核心修复）
         String encryptedPassword = bCryptPasswordEncoder.encode(dto.getPassword().trim());
 
-        // 4. 构建SysUser实体（映射sys_user表）
         SysUser user = new SysUser();
         user.setUsername(dto.getUsername().trim());
-        user.setPassword(encryptedPassword); // 存储加密后的密码
+        user.setPassword(encryptedPassword);
         user.setName(dto.getName() != null ? dto.getName().trim() : null);
         user.setRole(dto.getRole());
-        user.setStatus(1); // 注册即生效，状态=正常
-        user.setCreateTime(LocalDateTime.now()); // 创建时间（表中无此字段可删除）
 
-        // 5. 保存用户到数据库（若加了唯一索引，可捕获DuplicateKeyException防高并发重复）
+        if (dto.getRole() == 0) {
+            user.setStatus(1);
+        } else {
+            user.setStatus(0);
+        }
+
+        user.setCreateTime(LocalDateTime.now());
+
         sysUserMapper.insert(user);
 
-        // 6. 构建注册成功返回结果（RegisterVO）
         RegisterVO registerVO = new RegisterVO();
         registerVO.setUserId(user.getId());
         registerVO.setUsername(user.getUsername());
         registerVO.setName(user.getName());
         registerVO.setRole(user.getRole());
-        registerVO.setMessage("注册成功，请登录");
+
+        if (dto.getRole() == 0) {
+            registerVO.setMessage("注册成功，请登录");
+        } else {
+            registerVO.setMessage("注册申请已提交，等待老师审核通过后即可登录");
+        }
 
         return registerVO;
     }
-
     /**
      * 获取当前登录用户（供后续审核功能使用，无需前端传ID）
      */
@@ -195,5 +198,72 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
         return this.update(updateWrapper);
 
+    }
+
+
+    @Override
+    public Result<?> auditUser(UserAuditDTO dto) {
+        SysUser currentUser = this.getCurrentUser();
+
+        if (currentUser.getRole() != 2) {
+            throw BusinessException.businessError("只有老师才能审核用户注册申请");
+        }
+
+        SysUser targetUser = sysUserMapper.selectById(dto.getUserId());
+        if (targetUser == null) {
+            throw BusinessException.businessError("用户不存在");
+        }
+
+        if (targetUser.getStatus() != 0) {
+            throw BusinessException.businessError("该用户已审核，无需重复操作");
+        }
+
+        if (targetUser.getRole() == 0) {
+            throw BusinessException.businessError("学生账号无需审核");
+        }
+
+        LambdaUpdateWrapper<SysUser> updateWrapper = new LambdaUpdateWrapper<>();
+        updateWrapper.eq(SysUser::getId, dto.getUserId());
+
+        if (dto.getAuditResult() == 1) {
+            updateWrapper.set(SysUser::getStatus, 1);
+            sysUserMapper.update(null, updateWrapper);
+            return Result.success("审核通过，该用户现已可以登录");
+        } else if (dto.getAuditResult() == 2) {
+            updateWrapper.set(SysUser::getStatus, 2);
+            sysUserMapper.update(null, updateWrapper);
+            return Result.success("审核拒绝，该用户无法登录");
+        } else {
+            throw BusinessException.businessError("审核结果参数错误，1=通过，2=拒绝");
+        }
+    }
+
+    @Override
+    public Result<?> getPendingUsers(Integer pageNum, Integer pageSize) {
+        SysUser currentUser = this.getCurrentUser();
+
+        if (currentUser.getRole() != 2) {
+            throw BusinessException.businessError("只有老师才能查看待审核用户列表");
+        }
+
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1) {
+            pageSize = 10;
+        }
+
+        QueryWrapper<SysUser> queryWrapper = new QueryWrapper<>();
+        queryWrapper.in("role", 1, 2)
+                .eq("status", 0)
+                .orderByDesc("create_time");
+
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<SysUser> page =
+                new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(pageNum, pageSize);
+
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<SysUser> resultPage =
+                sysUserMapper.selectPage(page, queryWrapper);
+
+        return Result.success(resultPage);
     }
 }

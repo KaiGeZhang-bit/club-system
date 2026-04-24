@@ -1,13 +1,9 @@
 package com.college.club.controller;
 
-import com.college.club.common.vo.LoginVO;
 import com.college.club.common.vo.RegisterVO;
 import com.college.club.common.vo.Result; // 你项目的统一返回类
 import com.college.club.common.vo.UserInfoVO;
-import com.college.club.dto.ChangePasswordDTO;
-import com.college.club.dto.SysUserLoginDTO;
-import com.college.club.dto.SysUserRegisterDTO;
-import com.college.club.dto.UserProfileUpdateDTO;
+import com.college.club.dto.*;
 import com.college.club.entity.SysUser;
 import com.college.club.service.SysUserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -98,5 +94,20 @@ public class SysUserController {
         }
 
         return Result.failSystem("密码修改失败，请重试");
+    }
+
+
+    @Operation(summary = "审核用户注册申请（仅老师）")
+    @PostMapping("/auditUser")
+    public Result<?> auditUser(@Valid @RequestBody UserAuditDTO dto) {
+        return sysUserService.auditUser(dto);
+    }
+
+    @Operation(summary = "查询待审核用户列表（仅老师）")
+    @GetMapping("/pendingUsers")
+    public Result<?> getPendingUsers(
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize) {
+        return sysUserService.getPendingUsers(pageNum, pageSize);
     }
 }

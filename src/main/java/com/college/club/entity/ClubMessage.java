@@ -20,6 +20,11 @@ public class ClubMessage {
     private Long id;
 
     /**
+     * 发送者ID，关联 sys_user.id
+     */
+    private Long senderId;
+
+    /**
      * 接收人ID，关联 sys_user.id
      */
     private Long receiverId;

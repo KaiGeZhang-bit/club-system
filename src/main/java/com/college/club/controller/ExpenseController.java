@@ -38,6 +38,8 @@ public class ExpenseController {
     private ExpenseTransactionService transactionService;
     @Autowired
     private SysUserService sysUserService;
+    @Autowired
+    private com.college.club.service.ExpenseStatisticsService expenseStatisticsService;
 
     @Operation(summary = "提交经费申请")
     @PostMapping("/apply")
@@ -79,15 +81,51 @@ public class ExpenseController {
 
     @Operation(summary = "分页查询经费流水")
     @GetMapping("/transactions")
-    public Result<PageVO<ExpenseTransactionVO>> queryTransactions(
+    public Result<com.college.club.common.vo.TransactionPageVO> queryTransactions(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
             @RequestParam(required = false) Long clubId,
             @RequestParam(required = false) Integer type,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
-        PageVO<ExpenseTransactionVO> page = transactionService.queryTransactionList(
+        com.college.club.common.vo.TransactionPageVO page = transactionService.queryTransactionList(
                 pageNum, pageSize, clubId, type, startTime, endTime);
         return Result.success(page);
+    }
+
+    @Operation(summary = "撤回经费申请")
+    @PutMapping("/application/{id}/withdraw")
+    public Result<Void> withdrawApplication(@PathVariable Long id) {
+        applicationService.withdrawApplication(id);
+        return (Result<Void>) Result.success();
+    }
+
+    @Operation(summary = "添加收入记录")
+    @PostMapping("/income")
+    public Result<Void> addIncome(
+            @RequestParam Long clubId,
+            @RequestParam java.math.BigDecimal amount,
+            @RequestParam(required = false) String source,
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) Long activityId) {
+        transactionService.addIncome(clubId, amount, source, description, activityId);
+        return (Result<Void>) Result.success();
+    }
+
+    @Operation(summary = "查询社团经费统计")
+    @GetMapping("/statistics")
+    public Result<com.college.club.common.vo.ExpenseStatisticsVO> getStatistics(
+            @RequestParam(required = false) Long clubId) {
+        com.college.club.common.vo.ExpenseStatisticsVO statistics = 
+            expenseStatisticsService.getClubStatistics(clubId);
+        return Result.success(statistics);
+    }
+
+    @Operation(summary = "查询我负责的社团经费统计")
+    @GetMapping("/myStatistics")
+    public Result<com.college.club.common.vo.ExpenseStatisticsVO> getMyStatistics() {
+        com.college.club.common.vo.ExpenseStatisticsVO statistics = 
+            expenseStatisticsService.getMyManagedClubStatistics();
+        return Result.success(statistics);
     }
 }

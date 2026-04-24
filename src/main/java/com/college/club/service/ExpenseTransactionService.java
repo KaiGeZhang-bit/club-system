@@ -2,7 +2,7 @@ package com.college.club.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.college.club.common.vo.ExpenseTransactionVO;
-import com.college.club.common.vo.PageVO;
+import com.college.club.common.vo.TransactionPageVO;
 import com.college.club.entity.ExpenseTransaction;
 import org.springframework.stereotype.Service;
 
@@ -23,9 +23,11 @@ public interface ExpenseTransactionService extends IService<ExpenseTransaction> 
      * @param type 交易类型（1收入 2支出，可选）
      * @param startTime 开始时间（可选）
      * @param endTime 结束时间（可选）
-     * @return 分页结果
+     * @return 分页结果，包含基于查询条件的统计数据
      */
-    PageVO<ExpenseTransactionVO> queryTransactionList(Integer pageNum, Integer pageSize,
-                                                      Long clubId, Integer type,
-                                                      LocalDateTime startTime, LocalDateTime endTime);
+    TransactionPageVO queryTransactionList(Integer pageNum, Integer pageSize,
+                                           Long clubId, Integer type,
+                                           LocalDateTime startTime, LocalDateTime endTime);
+    
+    void addIncome(Long clubId, java.math.BigDecimal amount, String source, String description, Long activityId);
 }

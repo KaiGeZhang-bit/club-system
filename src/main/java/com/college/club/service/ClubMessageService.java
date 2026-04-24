@@ -1,6 +1,8 @@
 package com.college.club.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.college.club.common.vo.MessageVO;
+import com.college.club.common.vo.PageVO;
 import com.college.club.common.vo.Result;
 import com.college.club.entity.ClubMessage;
 
@@ -37,4 +39,29 @@ public interface ClubMessageService extends IService<ClubMessage> {
      * @return 权限校验结果
      */
     Result<String> checkSendPermission(Long senderId, Long clubId);
+
+    /**
+     * 查询我发送过的消息列表（分页）
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @param clubId 社团ID（可选，筛选特定社团）
+     * @return 分页消息列表
+     */
+    Result<PageVO<MessageVO>> getSentMessages(Integer pageNum, Integer pageSize, Long clubId);
+
+    /**
+     * 查询我收到的消息列表（分页）
+     * @param pageNum 页码
+     * @param pageSize 每页条数
+     * @param isRead 是否已读（可选，0=未读，1=已读）
+     * @return 分页消息列表
+     */
+    Result<PageVO<MessageVO>> getReceivedMessages(Integer pageNum, Integer pageSize, Integer isRead);
+
+    /**
+     * 标记消息为已读
+     * @param messageId 消息ID
+     * @return 操作结果
+     */
+    Result<String> markAsRead(Long messageId);
 }
