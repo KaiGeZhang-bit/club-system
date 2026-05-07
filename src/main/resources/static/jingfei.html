@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>经费管理模块 - 业务流程图</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", "SimSun", sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 1000px;
+            width: 100%;
+            border-radius: 12px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+        }
+        .box { fill: #fff; stroke: #333; stroke-width: 2; }
+        .box-start { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }
+        .box-end { fill: #e8f5e9; stroke: #388e3c; stroke-width: 2; }
+        .box-decision { fill: #fff3e0; stroke: #f57c00; stroke-width: 2; }
+        .line { stroke: #333; stroke-width: 2; fill: none; }
+        .text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 13px; fill: #333; text-anchor: middle; }
+        .text-bold { font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>经费管理模块 - 业务流程图</h1>
+
+    <svg viewBox="0 0 950 900" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+            </marker>
+        </defs>
+
+        <!-- 开始节点 -->
+        <g transform="translate(475, 30)">
+            <rect x="-60" y="-20" width="120" height="40" rx="20" class="box-start"/>
+            <text x="0" y="5" class="text text-bold">用户发起请求</text>
+        </g>
+
+        <!-- 操作类型判断 -->
+        <g transform="translate(475, 120)">
+            <polygon points="0,-30 60,0 0,30 -60,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">操作类型</text>
+        </g>
+
+        <!-- 连线：开始 -> 操作类型 -->
+        <line x1="475" y1="50" x2="475" y2="90" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 左侧分支：预算设置 -->
+        <g transform="translate(150, 210)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">设置年度/季度预算</text>
+        </g>
+        <line x1="415" y1="120" x2="210" y2="190" class="line" marker-end="url(#arrowhead)"/>
+        <text x="300" y="150" class="text">负责人</text>
+
+        <g transform="translate(150, 300)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">写入 club_budget 表</text>
+        </g>
+        <line x1="150" y1="230" x2="150" y2="280" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(150, 390)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">初始化 used_budget=0</text>
+        </g>
+        <line x1="150" y1="320" x2="150" y2="370" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(150, 480)">
+            <rect x="-50" y="-20" width="100" height="40" class="box"/>
+            <text x="0" y="5" class="text">返回设置成功</text>
+        </g>
+        <line x1="150" y1="410" x2="150" y2="460" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 中间分支：经费申请与审批 -->
+        <g transform="translate(475, 210)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">提交经费申请</text>
+        </g>
+        <line x1="475" y1="150" x2="475" y2="190" class="line" marker-end="url(#arrowhead)"/>
+        <text x="495" y="170" class="text">学生/负责人</text>
+
+        <g transform="translate(475, 300)">
+            <rect x="-80" y="-20" width="160" height="40" class="box"/>
+            <text x="0" y="5" class="text">写入 application 表 status=0</text>
+        </g>
+        <line x1="475" y1="230" x2="475" y2="280" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(475, 390)">
+            <polygon points="0,-25 60,0 0,25 -60,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">审批操作</text>
+        </g>
+        <line x1="475" y1="320" x2="475" y2="365" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(370, 490)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">驳回：status=2 记录原因</text>
+        </g>
+        <line x1="415" y1="390" x2="370" y2="470" class="line" marker-end="url(#arrowhead)"/>
+        <text x="380" y="430" class="text">驳回</text>
+
+        <g transform="translate(580, 490)">
+            <polygon points="0,-25 50,0 0,25 -50,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">校验预算余额</text>
+        </g>
+        <line x1="535" y1="390" x2="580" y2="470" class="line" marker-end="url(#arrowhead)"/>
+        <text x="580" y="430" class="text">通过</text>
+
+        <g transform="translate(580, 580)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">余额不足？</text>
+        </g>
+        <line x1="580" y1="515" x2="580" y2="560" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(480, 670)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">余额不足驳回</text>
+        </g>
+        <line x1="520" y1="580" x2="480" y2="650" class="line" marker-end="url(#arrowhead)"/>
+        <text x="490" y="620" class="text">是</text>
+
+        <g transform="translate(680, 670)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">生成 1 对 1 支出流水</text>
+        </g>
+        <line x1="640" y1="580" x2="680" y2="650" class="line" marker-end="url(#arrowhead)"/>
+        <text x="670" y="620" class="text">否</text>
+
+        <g transform="translate(680, 760)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">累加 used_budget 字段</text>
+        </g>
+        <line x1="680" y1="690" x2="680" y2="740" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(475, 760)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">返回审批结果</text>
+        </g>
+        <line x1="480" y1="690" x2="475" y2="740" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="680" y1="780" x2="535" y2="780" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 右侧分支：流水查询 -->
+        <g transform="translate(800, 210)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">经费流水查询</text>
+        </g>
+        <line x1="535" y1="120" x2="740" y2="190" class="line" marker-end="url(#arrowhead)"/>
+        <text x="650" y="150" class="text">所有人</text>
+
+        <g transform="translate(800, 300)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">按类型/时间过滤</text>
+        </g>
+        <line x1="800" y1="230" x2="800" y2="280" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(800, 390)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">分页返回统计数据</text>
+        </g>
+        <line x1="800" y1="320" x2="800" y2="370" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(800, 480)">
+            <rect x="-50" y="-20" width="100" height="40" class="box"/>
+            <text x="0" y="5" class="text">返回查询结果</text>
+        </g>
+        <line x1="800" y1="410" x2="800" y2="460" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 汇聚到结束节点 -->
+        <g transform="translate(475, 850)">
+            <rect x="-50" y="-20" width="100" height="40" rx="20" class="box-end"/>
+            <text x="0" y="5" class="text text-bold">流程结束</text>
+        </g>
+
+        <line x1="150" y1="500" x2="425" y2="830" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="475" y1="780" x2="475" y2="830" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="800" y1="500" x2="525" y2="830" class="line" marker-end="url(#arrowhead)"/>
+
+    </svg>
+</div>
+</body>
+</html>

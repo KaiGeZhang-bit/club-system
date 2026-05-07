@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动管理模块 - 业务流程图</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", "SimSun", sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 1000px;
+            width: 100%;
+            border-radius: 12px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+        }
+        .box { fill: #fff; stroke: #333; stroke-width: 2; }
+        .box-start { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }
+        .box-end { fill: #e8f5e9; stroke: #388e3c; stroke-width: 2; }
+        .box-decision { fill: #fff3e0; stroke: #f57c00; stroke-width: 2; }
+        .line { stroke: #333; stroke-width: 2; fill: none; }
+        .text { font-family: "Microsoft YaHei", "SimSun", sans-serif; font-size: 13px; fill: #333; text-anchor: middle; }
+        .text-bold { font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>活动管理模块 - 业务流程图</h1>
+
+    <svg viewBox="0 0 1000 950" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+            </marker>
+        </defs>
+
+        <!-- 开始节点 -->
+        <g transform="translate(500, 30)">
+            <rect x="-60" y="-20" width="120" height="40" rx="20" class="box-start"/>
+            <text x="0" y="5" class="text text-bold">用户发起请求</text>
+        </g>
+
+        <!-- 操作类型判断 -->
+        <g transform="translate(500, 120)">
+            <polygon points="0,-30 60,0 0,30 -60,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">操作类型</text>
+        </g>
+
+        <!-- 连线：开始 -> 操作类型 -->
+        <line x1="500" y1="50" x2="500" y2="90" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 左侧分支：活动发布与审核 -->
+        <g transform="translate(180, 210)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">提交活动创建申请</text>
+        </g>
+        <line x1="440" y1="120" x2="250" y2="190" class="line" marker-end="url(#arrowhead)"/>
+        <text x="330" y="150" class="text">负责人</text>
+
+        <g transform="translate(180, 300)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">插入 activity_info status=0</text>
+        </g>
+        <line x1="180" y1="230" x2="180" y2="280" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(180, 390)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">管理员审核</text>
+        </g>
+        <line x1="180" y1="320" x2="180" y2="370" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(180, 480)">
+            <polygon points="0,-25 50,0 0,25 -50,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">审核结果</text>
+        </g>
+        <line x1="180" y1="410" x2="180" y2="455" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(80, 580)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">驳回：status=2</text>
+        </g>
+        <line x1="130" y1="480" x2="80" y2="560" class="line" marker-end="url(#arrowhead)"/>
+        <text x="90" y="520" class="text">驳回</text>
+
+        <g transform="translate(280, 580)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">通过：status=1 发布</text>
+        </g>
+        <line x1="230" y1="480" x2="280" y2="560" class="line" marker-end="url(#arrowhead)"/>
+        <text x="270" y="520" class="text">通过</text>
+
+        <g transform="translate(180, 670)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">返回发布结果</text>
+        </g>
+        <line x1="80" y1="600" x2="180" y2="650" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="280" y1="600" x2="180" y2="650" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 中间分支：学生报名 -->
+        <g transform="translate(500, 210)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">提交活动报名申请</text>
+        </g>
+        <line x1="500" y1="150" x2="500" y2="190" class="line" marker-end="url(#arrowhead)"/>
+        <text x="520" y="170" class="text">学生</text>
+
+        <g transform="translate(500, 300)">
+            <rect x="-80" y="-20" width="160" height="40" class="box"/>
+            <text x="0" y="5" class="text">写入 join 表 audit_status=0</text>
+        </g>
+        <line x1="500" y1="230" x2="500" y2="280" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(500, 390)">
+            <polygon points="0,-25 60,0 0,25 -60,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">负责人审核报名</text>
+        </g>
+        <line x1="500" y1="320" x2="500" y2="365" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(400, 490)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">通过：status=1 更新 join_num</text>
+        </g>
+        <line x1="440" y1="390" x2="400" y2="470" class="line" marker-end="url(#arrowhead)"/>
+        <text x="430" y="430" class="text">通过</text>
+
+        <g transform="translate(600, 490)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">驳回：status=2 通知学生</text>
+        </g>
+        <line x1="560" y1="390" x2="600" y2="470" class="line" marker-end="url(#arrowhead)"/>
+        <text x="590" y="430" class="text">驳回</text>
+
+        <g transform="translate(500, 580)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">返回报名结果</text>
+        </g>
+        <line x1="400" y1="510" x2="500" y2="560" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="600" y1="510" x2="500" y2="560" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 右侧分支：现场签到与状态管理 -->
+        <g transform="translate(820, 210)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">现场签到 / 状态管理</text>
+        </g>
+        <line x1="560" y1="120" x2="750" y2="190" class="line" marker-end="url(#arrowhead)"/>
+        <text x="680" y="150" class="text">系统/负责人</text>
+
+        <g transform="translate(820, 300)">
+            <polygon points="0,-25 50,0 0,25 -50,0" class="box-decision"/>
+            <text x="0" y="5" class="text text-bold">操作类型</text>
+        </g>
+        <line x1="820" y1="230" x2="820" y2="275" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 签到子流程 -->
+        <g transform="translate(720, 410)">
+            <rect x="-80" y="-20" width="160" height="40" class="box"/>
+            <text x="0" y="5" class="text">扫码解析 activityId</text>
+        </g>
+        <line x1="770" y1="300" x2="720" y2="390" class="line" marker-end="url(#arrowhead)"/>
+        <text x="730" y="340" class="text">签到</text>
+
+        <g transform="translate(720, 500)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">校验报名记录</text>
+        </g>
+        <line x1="720" y1="430" x2="720" y2="480" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(720, 590)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">更新 sign_status=1</text>
+        </g>
+        <line x1="720" y1="520" x2="720" y2="570" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 状态管理子流程 -->
+        <g transform="translate(920, 410)">
+            <rect x="-80" y="-20" width="160" height="40" class="box"/>
+            <text x="0" y="5" class="text">定时任务触发</text>
+        </g>
+        <line x1="870" y1="300" x2="920" y2="390" class="line" marker-end="url(#arrowhead)"/>
+        <text x="930" y="340" class="text">定时</text>
+
+        <g transform="translate(920, 500)">
+            <rect x="-70" y="-20" width="140" height="40" class="box"/>
+            <text x="0" y="5" class="text">流转 status (2 进行中/3 结束)</text>
+        </g>
+        <line x1="920" y1="430" x2="920" y2="480" class="line" marker-end="url(#arrowhead)"/>
+
+        <g transform="translate(820, 680)">
+            <rect x="-60" y="-20" width="120" height="40" class="box"/>
+            <text x="0" y="5" class="text">返回操作结果</text>
+        </g>
+        <line x1="720" y1="610" x2="820" y2="660" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="920" y1="520" x2="820" y2="660" class="line" marker-end="url(#arrowhead)"/>
+
+        <!-- 汇聚到结束节点 -->
+        <g transform="translate(500, 900)">
+            <rect x="-50" y="-20" width="100" height="40" rx="20" class="box-end"/>
+            <text x="0" y="5" class="text text-bold">流程结束</text>
+        </g>
+
+        <line x1="180" y1="690" x2="450" y2="880" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="500" y1="600" x2="500" y2="880" class="line" marker-end="url(#arrowhead)"/>
+        <line x1="820" y1="700" x2="550" y2="880" class="line" marker-end="url(#arrowhead)"/>
+
+    </svg>
+</div>
+</body>
+</html>

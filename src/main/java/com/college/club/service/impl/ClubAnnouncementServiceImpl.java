@@ -5,10 +5,12 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.college.club.entity.ClubAnnouncement;
 import com.college.club.entity.ClubInfo;
+import com.college.club.entity.SysUser;
 import com.college.club.mapper.ClubAnnouncementMapper;
 import com.college.club.service.ClubAnnouncementService;
 import com.college.club.service.ClubInfoService;
 import com.college.club.common.vo.Result;
+import com.college.club.service.SysUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +24,11 @@ public class ClubAnnouncementServiceImpl extends ServiceImpl<ClubAnnouncementMap
 
     @Autowired
     private ClubInfoService clubInfoService;
+    @Autowired
+    private SysUserService sysUserService;
 
     /**
-     * 新增公告（纯业务逻辑，无权限校验）
+     * 新增公告
      */
     @Override
     public Result<?> addAnnouncement(ClubAnnouncement announcement) {

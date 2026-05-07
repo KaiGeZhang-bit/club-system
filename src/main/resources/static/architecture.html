@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社团管理系统架构图</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .chart-title {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+    </style>
+</head>
+<body>
+<h1>🏫 社团管理系统架构可视化</h1>
+
+<!-- 图表 1: 系统分层架构 -->
+<div class="chart-container">
+    <div class="chart-title">1. 系统分层架构图</div>
+    <div class="mermaid">
+        graph TB
+        subgraph "前端层"
+        Web[Web浏览器]
+        Mobile[移动端]
+        end
+
+        subgraph "安全层"
+        CORS[CORS配置]
+        JWT[JWT认证]
+        Security[Spring Security]
+        end
+
+        subgraph "控制层 Controller"
+        AuthCtrl[认证控制器]
+        ClubCtrl[社团控制器]
+        ActivityCtrl[活动控制器]
+        ExpenseCtrl[经费控制器]
+        end
+
+        subgraph "业务层 Service"
+        AuthService[认证服务]
+        ClubService[社团服务]
+        ActivityService[活动服务]
+        ExpenseService[经费服务]
+        end
+
+        subgraph "数据访问层 Mapper"
+        UserMapper[用户Mapper]
+        ClubMapper[社团Mapper]
+        ActivityMapper[活动Mapper]
+        ExpenseMapper[经费Mapper]
+        end
+
+        subgraph "数据存储层"
+        MySQL[(MySQL数据库)]
+        Redis[(Redis缓存)]
+        end
+
+        Web --> CORS
+        Mobile --> CORS
+        CORS --> JWT
+        JWT --> Security
+
+        Security --> AuthCtrl
+        Security --> ClubCtrl
+        Security --> ActivityCtrl
+        Security --> ExpenseCtrl
+
+        AuthCtrl --> AuthService
+        ClubCtrl --> ClubService
+        ActivityCtrl --> ActivityService
+        ExpenseCtrl --> ExpenseService
+
+        AuthService --> UserMapper
+        ClubService --> ClubMapper
+        ActivityService --> ActivityMapper
+        ExpenseService --> ExpenseMapper
+
+        UserMapper --> MySQL
+        ClubMapper --> MySQL
+        ActivityMapper --> MySQL
+        ExpenseMapper --> MySQL
+
+        AuthService -.-> Redis
+        ClubService -.-> Redis
+        ActivityService -.-> Redis
+    </div>
+</div>
+
+<!-- 图表 2: 用户登录流程 -->
+<div class="chart-container">
+    <div class="chart-title">2. 用户登录认证流程</div>
+    <div class="mermaid">
+        sequenceDiagram
+        participant U as 用户
+        participant F as JWT过滤器
+        participant L as 登录接口
+        participant S as Security
+        participant D as 数据库
+        participant R as Redis
+
+        U->>L: POST /login (账号密码)
+        L->>S: 触发认证
+        S->>D: 查询用户信息
+        D-->>S: 返回用户+角色
+        S->>S: BCrypt验证密码
+        S-->>L: 认证成功
+        L->>L: 生成JWT Token
+        L-->>U: 返回Token
+
+        Note over U,R: 后续请求携带Token
+        U->>F: 携带JWT访问接口
+        F->>F: 验证Token有效性
+        F->>R: 检查Token黑名单
+        R-->>F: Token状态正常
+        F->>S: 设置认证上下文
+        S-->>U: 允许访问资源
+    </div>
+</div>
+
+<!-- 图表 3: 核心模块关系 -->
+<div class="chart-container">
+    <div class="chart-title">3. 核心功能模块</div>
+    <div class="mermaid">
+        graph LR
+        subgraph "用户管理"
+        Register[用户注册]
+        Login[用户登录]
+        Profile[个人信息]
+        Password[修改密码]
+        end
+
+        subgraph "社团管理"
+        CreateClub[创建社团]
+        JoinClub[加入申请]
+        QuitClub[退出社团]
+        Audit[审核管理]
+        Message[消息通知]
+        end
+
+        subgraph "活动管理"
+        PublishActivity[发布活动]
+        ActivitySignUp[活动报名]
+        QRCode[二维码签到]
+        ActivityManage[活动管理]
+        end
+
+        subgraph "经费管理"
+        Budget[预算管理]
+        ExpenseApply[经费申请]
+        Approval[审批流程]
+        Transaction[交易记录]
+        Statistics[统计分析]
+        end
+
+        Register --> Login
+        Login --> CreateClub
+        Login --> JoinClub
+        CreateClub --> PublishActivity
+        JoinClub --> Audit
+        QuitClub --> Audit
+        Audit --> Message
+        PublishActivity --> ActivitySignUp
+        ActivitySignUp --> QRCode
+        CreateClub --> Budget
+        Budget --> ExpenseApply
+        ExpenseApply --> Approval
+        Approval --> Transaction
+        Transaction --> Statistics
+    </div>
+</div>
+
+<!-- 图表 4: 数据库实体关系 -->
+<div class="chart-container">
+    <div class="chart-title">4. 数据库实体关系图</div>
+    <div class="mermaid">
+        erDiagram
+        SysUser ||--o{ UserClubRelation : "拥有"
+        SysUser ||--o{ ActivityJoin : "参与"
+        SysUser ||--o{ ClubMessage : "发送/接收"
+        SysUser ||--o{ ExpenseApplication : "申请"
+
+        ClubInfo ||--o{ UserClubRelation : "包含成员"
+        ClubInfo ||--o{ ActivityInfo : "举办活动"
+        ClubInfo ||--o{ ClubAnnouncement : "发布公告"
+        ClubInfo ||--o{ ClubBudget : "预算管理"
+        ClubInfo ||--o{ ClubMessage : "消息关联"
+        ClubInfo ||--o{ UserClubQuit : "退出申请"
+
+        ActivityInfo ||--o{ ActivityJoin : "报名记录"
+
+        ClubBudget ||--o{ ExpenseApplication : "经费申请"
+        ExpenseApplication ||--o{ ExpenseApproval : "审批记录"
+        ExpenseApplication ||--|| ExpenseTransaction : "产生交易"
+
+        SysUser {
+        bigint id PK
+        string username
+        string password
+        string role
+        datetime create_time
+        }
+
+        ClubInfo {
+        bigint id PK
+        string club_name
+        bigint founder_id FK
+        string status
+        }
+
+        ActivityInfo {
+        bigint id PK
+        bigint club_id FK
+        string activity_name
+        datetime start_time
+        string qr_code
+        }
+
+        UserClubRelation {
+        bigint id PK
+        bigint user_id FK
+        bigint club_id FK
+        string role
+        string status
+        }
+    </div>
+</div>
+
+<!-- 引入 Mermaid -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+
+    // 初始化配置
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'default',  // 主题: default, dark, forest, neutral
+        securityLevel: 'loose',
+        flowchart: {
+            useMaxWidth: true,
+            htmlLabels: true
+        }
+    });
+</script>
+</body>
+</html>

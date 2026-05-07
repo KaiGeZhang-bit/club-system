@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社团管理系统 - 核心实体关系图</title>
+    <style>
+        body {
+            font-family: "SimSun", "宋体", serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 1400px;
+            width: 100%;
+        }
+        h1 {
+            text-align: center;
+            font-family: "SimHei", "黑体", sans-serif;
+            color: #2c3e50;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+        }
+        /* 样式定义 */
+        .entity-rect { fill: #fff; stroke: #333; stroke-width: 2; }
+        .attr-ellipse { fill: #fff; stroke: #666; stroke-width: 1.5; }
+        .rel-diamond { fill: #fff; stroke: #d32f2f; stroke-width: 2; }
+        .line-solid { stroke: #333; stroke-width: 2; fill: none; }
+
+        .text-entity { font-family: "SimHei", "黑体", sans-serif; font-size: 16px; font-weight: bold; fill: #000; text-anchor: middle; }
+        .text-attr { font-family: "SimSun", "宋体", serif; font-size: 13px; fill: #444; text-anchor: middle; }
+        .text-rel { font-family: "SimHei", "黑体", sans-serif; font-size: 14px; font-weight: bold; fill: #d32f2f; text-anchor: middle; }
+        .text-card { font-family: "SimHei", "黑体", sans-serif; font-size: 14px; font-weight: bold; fill: #333; text-anchor: middle; }
+        .underline { text-decoration: underline; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>社团管理系统 - 核心实体关系图 (ER Diagram)</h1>
+
+    <svg viewBox="0 0 1200 850" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- 箭头标记 -->
+            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,10 L10,5 z" fill="#333"/>
+            </marker>
+        </defs>
+
+        <!-- ================= 中心实体：社团 (ClubInfo) ================= -->
+        <g transform="translate(600, 400)">
+            <!-- 实体 -->
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">社团</text>
+
+            <!-- 属性 -->
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-130" cy="-60" rx="45" ry="18" class="attr-ellipse"/><text x="-130" y="-55" class="text-attr">社团名称</text><line x1="-90" y1="-50" x2="-50" y2="-25" class="line-solid"/>
+            <ellipse cx="130" cy="-60" rx="35" ry="18" class="attr-ellipse"/><text x="130" y="-55" class="text-attr">类型</text><line x1="95" y1="-50" x2="50" y2="-25" class="line-solid"/>
+            <ellipse cx="-130" cy="60" rx="35" ry="18" class="attr-ellipse"/><text x="-130" y="65" class="text-attr">简介</text><line x1="-95" y1="50" x2="-50" y2="25" class="line-solid"/>
+            <ellipse cx="130" cy="60" rx="35" ry="18" class="attr-ellipse"/><text x="130" y="65" class="text-attr">状态</text><line x1="95" y1="50" x2="50" y2="25" class="line-solid"/>
+        </g>
+
+        系统核心实体包括“社团”“成员”“活动”“经费记录”“公告”，通过梳理实体间关联关系确保数据库设计贴合业务逻辑：一是社团与成员为一对多关系，一个社团可包含多名成员，一名学生最多加入2个社团（适配学校规定）；二是社团与活动为一对多关系，单个活动仅归属一个社团；三是社团与经费记录为一对多关系，每笔经费流水均对应具体社团；四是社团与公告为一对多关系，公告分两类——社团公告归属具体社团，学校公告不关联社团（适配全校通知场景）。实体关系梳理的核心目的是避免数据冗余，确保后续数据操作的一致性，比如成员信息变更时无需同步修改活动、经费等关联数据（E-R图见图4-2）。
+
+        <!-- ================= 1. 用户 (SysUser) ================= -->
+        <g transform="translate(150, 400)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">用户</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-120" cy="-50" rx="40" ry="18" class="attr-ellipse"/><text x="-120" y="-45" class="text-attr">用户名</text><line x1="-85" y1="-40" x2="-45" y2="-20" class="line-solid"/>
+            <ellipse cx="120" cy="-50" rx="35" ry="18" class="attr-ellipse"/><text x="120" y="-45" class="text-attr">角色</text><line x1="85" y1="-40" x2="45" y2="-20" class="line-solid"/>
+            <ellipse cx="-120" cy="50" rx="35" ry="18" class="attr-ellipse"/><text x="-120" y="55" class="text-attr">姓名</text><line x1="-85" y1="40" x2="-45" y2="20" class="line-solid"/>
+            <ellipse cx="120" cy="50" rx="40" ry="18" class="attr-ellipse"/><text x="120" y="55" class="text-attr">手机号</text><line x1="80" y1="40" x2="45" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：管理 (用户 -> 社团) -->
+        <polygon points="380,385 410,400 380,415 350,400" class="rel-diamond"/>
+        <text x="380" y="405" class="text-rel">管理</text>
+        <line x1="210" y1="400" x2="350" y2="400" class="line-solid"/>
+        <line x1="410" y1="400" x2="540" y2="400" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="280" y="390" class="text-card">1</text>
+        <text x="480" y="390" class="text-card">n</text>
+
+        <!-- ================= 2. 活动 (ActivityInfo) ================= -->
+        <g transform="translate(1050, 400)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">活动</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-120" cy="-50" rx="45" ry="18" class="attr-ellipse"/><text x="-120" y="-45" class="text-attr">活动名称</text><line x1="-80" y1="-40" x2="-45" y2="-20" class="line-solid"/>
+            <ellipse cx="120" cy="-50" rx="35" ry="18" class="attr-ellipse"/><text x="120" y="-45" class="text-attr">时间</text><line x1="85" y1="-40" x2="45" y2="-20" class="line-solid"/>
+            <ellipse cx="-120" cy="50" rx="35" ry="18" class="attr-ellipse"/><text x="-120" y="55" class="text-attr">地点</text><line x1="-85" y1="40" x2="-45" y2="20" class="line-solid"/>
+            <ellipse cx="120" cy="50" rx="35" ry="18" class="attr-ellipse"/><text x="120" y="55" class="text-attr">人数</text><line x1="85" y1="40" x2="45" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：举办 (社团 -> 活动) -->
+        <polygon points="820,385 850,400 820,415 790,400" class="rel-diamond"/>
+        <text x="820" y="405" class="text-rel">举办</text>
+        <line x1="660" y1="400" x2="790" y2="400" class="line-solid"/>
+        <line x1="850" y1="400" x2="990" y2="400" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="720" y="390" class="text-card">1</text>
+        <text x="920" y="390" class="text-card">n</text>
+
+        <!-- ================= 3. 预算 (ClubBudget) ================= -->
+        <g transform="translate(250, 650)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">预算</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-110" cy="50" rx="45" ry="18" class="attr-ellipse"/><text x="-110" y="55" class="text-attr">年度/季度</text><line x1="-70" y1="40" x2="-40" y2="20" class="line-solid"/>
+            <ellipse cx="110" cy="50" rx="40" ry="18" class="attr-ellipse"/><text x="110" y="55" class="text-attr">总金额</text><line x1="70" y1="40" x2="40" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：设置 (社团 -> 预算) -->
+        <polygon points="450,530 470,550 450,570 430,550" class="rel-diamond"/>
+        <text x="450" y="555" class="text-rel">设置</text>
+        <line x1="600" y1="430" x2="470" y2="530" class="line-solid"/>
+        <line x1="430" y1="550" x2="310" y2="620" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="540" y="470" class="text-card">1</text>
+        <text x="350" y="610" class="text-card">n</text>
+
+        <!-- ================= 4. 经费 (ExpenseApplication) ================= -->
+        <g transform="translate(600, 650)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">经费</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-120" cy="50" rx="45" ry="18" class="attr-ellipse"/><text x="-120" y="55" class="text-attr">申请金额</text><line x1="-80" y1="40" x2="-45" y2="20" class="line-solid"/>
+            <ellipse cx="120" cy="50" rx="45" ry="18" class="attr-ellipse"/><text x="120" y="55" class="text-attr">经费用途</text><line x1="80" y1="40" x2="45" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：申请 (社团 -> 经费) -->
+        <polygon points="600,430 620,450 600,470 580,450" class="rel-diamond"/>
+        <text x="600" y="455" class="text-rel">申请</text>
+        <line x1="600" y1="430" x2="600" y2="450" class="line-solid"/>
+        <line x1="600" y1="470" x2="600" y2="620" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="590" y="430" class="text-card">1</text>
+        <text x="590" y="610" class="text-card">n</text>
+
+        <!-- ================= 5. 流水 (ExpenseTransaction) ================= -->
+        <g transform="translate(950, 650)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">流水</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-110" cy="50" rx="35" ry="18" class="attr-ellipse"/><text x="-110" y="55" class="text-attr">类型</text><line x1="-75" y1="40" x2="-40" y2="20" class="line-solid"/>
+            <ellipse cx="110" cy="50" rx="45" ry="18" class="attr-ellipse"/><text x="110" y="55" class="text-attr">交易金额</text><line x1="70" y1="40" x2="40" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：产生 (经费 -> 流水) -->
+        <polygon points="780,635 800,650 780,665 760,650" class="rel-diamond"/>
+        <text x="780" y="655" class="text-rel">产生</text>
+        <line x1="660" y1="650" x2="760" y2="650" class="line-solid"/>
+        <line x1="800" y1="650" x2="890" y2="650" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="710" y="640" class="text-card">1</text>
+        <text x="850" y="640" class="text-card">1</text>
+
+        <!-- ================= 6. 公告 (ClubAnnouncement) ================= -->
+        <g transform="translate(400, 780)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">公告</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-110" cy="50" rx="35" ry="18" class="attr-ellipse"/><text x="-110" y="55" class="text-attr">标题</text><line x1="-75" y1="40" x2="-45" y2="20" class="line-solid"/>
+            <ellipse cx="110" cy="50" rx="35" ry="18" class="attr-ellipse"/><text x="110" y="55" class="text-attr">内容</text><line x1="75" y1="40" x2="45" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：发布 (社团 -> 公告) -->
+        <polygon points="500,530 520,550 500,570 480,550" class="rel-diamond"/>
+        <text x="500" y="555" class="text-rel">发布</text>
+        <line x1="580" y1="430" x2="520" y2="530" class="line-solid"/>
+        <line x1="480" y1="550" x2="460" y2="750" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="560" y="470" class="text-card">1</text>
+        <text x="440" y="730" class="text-card">n</text>
+
+        <!-- ================= 7. 消息 (ClubMessage) ================= -->
+        <g transform="translate(800, 780)">
+            <rect x="-60" y="-30" width="120" height="60" class="entity-rect"/>
+            <text x="0" y="8" class="text-entity">消息</text>
+
+            <ellipse cx="0" cy="-90" rx="30" ry="18" class="attr-ellipse"/><text x="0" y="-85" class="text-attr underline">id</text><line x1="0" y1="-72" x2="0" y2="-30" class="line-solid"/>
+            <ellipse cx="-110" cy="50" rx="40" ry="18" class="attr-ellipse"/><text x="-110" y="55" class="text-attr">发送者</text><line x1="-70" y1="40" x2="-40" y2="20" class="line-solid"/>
+            <ellipse cx="110" cy="50" rx="40" ry="18" class="attr-ellipse"/><text x="110" y="55" class="text-attr">接收者</text><line x1="70" y1="40" x2="40" y2="20" class="line-solid"/>
+        </g>
+
+        <!-- 关系：推送 (社团 -> 消息) -->
+        <polygon points="700,530 720,550 700,570 680,550" class="rel-diamond"/>
+        <text x="700" y="555" class="text-rel">推送</text>
+        <line x1="620" y1="430" x2="720" y2="530" class="line-solid"/>
+        <line x1="680" y1="550" x2="740" y2="750" class="line-solid" marker-end="url(#arrow)"/>
+        <text x="640" y="470" class="text-card">1</text>
+        <text x="760" y="730" class="text-card">n</text>
+
+    </svg>
+</div>
+</body>
+</html>
