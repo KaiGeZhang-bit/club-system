@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.college.club.common.vo.MyQuitApplyVO;
 import com.college.club.common.vo.PageVO;
+import com.college.club.common.vo.PendingQuitApplyVO;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ClubQuitAuditDTO; // 确保和你的DTO类名一致
 import com.college.club.dto.QuitClubDTO;
@@ -267,5 +268,116 @@ public class UserClubQuitServiceImpl extends ServiceImpl<UserClubQuitMapper, Use
 
 
         return Result.success("撤销成功");
+    }
+
+    /**
+     * 管理员查看待审核退出申请列表
+     * 仅社团负责人（role=1）和老师（role=2）可以查看
+     */
+    @Override
+    public Result<?> getPendingQuitApplyList(Integer pageNum, Integer pageSize, Long clubId) {
+        // 处理分页参数默认值
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1) {
+            pageSize = 10;
+        }
+
+        // 获取当前登录用户信息
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long userId = currentUser.getId();
+        Integer userRole = currentUser.getRole();
+
+        // 权限校验：仅社团负责人和老师可以查看
+        if (userRole != 1 && userRole != 2) {
+            throw new RuntimeException("仅社团负责人和老师可以查看待审核申请列表");
+        }
+
+        // 构造分页对象
+        IPage<UserClubQuit> page = new Page<>(pageNum, pageSize);
+
+        // 构造查询条件：只查询待审核状态（status=0）的申请
+        QueryWrapper<UserClubQuit> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("audit_status", 0); // 只查待审核的
+
+        // 如果是社团负责人，只能查看自己负责的社团的申请
+        if (userRole == 1) {
+            // 查询该用户作为负责人的社团ID列表
+            QueryWrapper<ClubInfo> clubQuery = new QueryWrapper<>();
+            clubQuery.eq("leader_id", userId);
+            List<ClubInfo> managedClubs = clubInfoMapper.selectList(clubQuery);
+
+            if (managedClubs == null || managedClubs.isEmpty()) {
+                // 如果没有负责的社团，返回空列表
+                PageVO<PendingQuitApplyVO> pageVO = new PageVO<>();
+                pageVO.setRecords(new ArrayList<>());
+                pageVO.setTotal(0L);
+                pageVO.setPages(0L);
+                pageVO.setCurrent(pageNum);
+                pageVO.setSize(pageSize);
+                return Result.success(pageVO);
+            }
+
+            List<Long> clubIds = managedClubs.stream()
+                    .map(ClubInfo::getId)
+                    .toList();
+            queryWrapper.in("club_id", clubIds);
+        }
+
+        // 如果指定了社团ID，进一步过滤
+        if (clubId != null) {
+            queryWrapper.eq("club_id", clubId);
+        }
+
+        // 按申请时间降序排列
+        queryWrapper.orderByDesc("apply_time");
+
+        // 分页查询
+        IPage<UserClubQuit> resultPage = this.baseMapper.selectPage(page, queryWrapper);
+        List<UserClubQuit> pendingList = resultPage.getRecords();
+
+        // 转换为VO列表
+        List<PendingQuitApplyVO> voList = new ArrayList<>();
+        if (pendingList != null && !pendingList.isEmpty()) {
+            for (UserClubQuit quitApply : pendingList) {
+                PendingQuitApplyVO vo = new PendingQuitApplyVO();
+                vo.setId(quitApply.getId());
+                vo.setUserId(quitApply.getUserId());
+                vo.setClubId(quitApply.getClubId());
+                vo.setApplyReason(quitApply.getApplyReason());
+                vo.setApplyTime(quitApply.getApplyTime());
+                vo.setStatus(quitApply.getStatus());
+                vo.setStatusDesc("待审核");
+
+                // 关联查询用户姓名
+                SysUser user = sysUserService.getById(quitApply.getUserId());
+                if (user != null) {
+                    vo.setUserName(user.getUsername());
+                } else {
+                    vo.setUserName("未知用户");
+                }
+
+                // 关联查询社团名称
+                ClubInfo clubInfo = clubInfoMapper.selectById(quitApply.getClubId());
+                if (clubInfo != null) {
+                    vo.setClubName(clubInfo.getClubName());
+                } else {
+                    vo.setClubName("该社团已删除");
+                }
+
+                voList.add(vo);
+            }
+        }
+
+        // 封装分页VO
+        PageVO<PendingQuitApplyVO> pageVO = new PageVO<>();
+        pageVO.setRecords(voList);
+        pageVO.setTotal(resultPage.getTotal());
+        pageVO.setPages(resultPage.getPages());
+        pageVO.setCurrent(pageNum);
+        pageVO.setSize(pageSize);
+
+        return Result.success(pageVO);
     }
 }

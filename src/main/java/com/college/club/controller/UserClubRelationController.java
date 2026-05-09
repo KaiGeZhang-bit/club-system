@@ -38,4 +38,14 @@ public class UserClubRelationController {
     public Result<?> withdrawApply(@RequestParam(value = "relationId", required = false) Long relationId){
         return  userClubRelationService.withdraw(relationId);
     }
+
+    @GetMapping("/pending-list")
+    @Operation(summary = "待审核加入申请列表（管理员/老师）")
+    public Result<?> getPendingJoinApplyList(
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Long clubId
+    ) {
+        return userClubRelationService.getPendingJoinApplyList(pageNum, pageSize, clubId);
+    }
 }

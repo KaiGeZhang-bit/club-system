@@ -16,4 +16,7 @@ public interface UserClubQuitService extends IService<UserClubQuit> {
     //撤销我的推出社团申请
     Result<?> withdrawQuitApply(Long quitApplyId);
 
+    //管理员查看待审核退出申请列表
+    Result<?> getPendingQuitApplyList(Integer pageNum, Integer pageSize, Long clubId);
+
 }

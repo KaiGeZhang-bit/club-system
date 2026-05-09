@@ -9,6 +9,7 @@ import com.college.club.common.exception.BusinessException;
 import com.college.club.common.vo.MyJoinApplyVO;
 import com.college.club.common.vo.MyQuitApplyVO;
 import com.college.club.common.vo.PageVO;
+import com.college.club.common.vo.PendingJoinApplyVO;
 import com.college.club.common.vo.Result;
 import com.college.club.dto.ClubJoinAuditDTO;
 import com.college.club.dto.JoinClubDTO;
@@ -245,6 +246,116 @@ public class UserClubRelationServiceImpl extends ServiceImpl<UserClubRelationMap
             log.error("撤回申请失败",e);  //注入log
             return Result.failBusiness("撤销失败，请重试");
         }
+    }
+
+    /**
+     * 管理员查看待审核加入申请列表
+     * 仅社团负责人（role=1）和老师（role=2）可以查看
+     */
+    @Override
+    public Result<?> getPendingJoinApplyList(Integer pageNum, Integer pageSize, Long clubId) {
+        // 处理分页参数默认值
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1) {
+            pageSize = 10;
+        }
+
+        // 获取当前登录用户信息
+        SysUser currentUser = sysUserService.getCurrentUser();
+        Long userId = currentUser.getId();
+        Integer userRole = currentUser.getRole();
+
+        // 权限校验：仅社团负责人和老师可以查看
+        if (userRole != 1 && userRole != 2) {
+            throw BusinessException.businessError("仅社团负责人和老师可以查看待审核申请列表");
+        }
+
+        // 构造分页对象
+        IPage<UserClubRelation> page = new Page<>(pageNum, pageSize);
+
+        // 构造查询条件：只查询待审核状态（status=0）的申请
+        QueryWrapper<UserClubRelation> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("status", 0); // 只查待审核的
+
+        // 如果是社团负责人，只能查看自己负责的社团的申请
+        if (userRole == 1) {
+            // 查询该用户作为负责人的社团ID列表
+            QueryWrapper<com.college.club.entity.ClubInfo> clubQuery = new QueryWrapper<>();
+            clubQuery.eq("leader_id", userId);
+            List<com.college.club.entity.ClubInfo> managedClubs = clubInfoMapper.selectList(clubQuery);
+            
+            if (managedClubs == null || managedClubs.isEmpty()) {
+                // 如果没有负责的社团，返回空列表
+                PageVO<PendingJoinApplyVO> pageVO = new PageVO<>();
+                pageVO.setRecords(new ArrayList<>());
+                pageVO.setTotal(0L);
+                pageVO.setPages(0L);
+                pageVO.setCurrent(pageNum);
+                pageVO.setSize(pageSize);
+                return Result.success(pageVO);
+            }
+            
+            List<Long> clubIds = managedClubs.stream()
+                    .map(com.college.club.entity.ClubInfo::getId)
+                    .toList();
+            queryWrapper.in("club_id", clubIds);
+        }
+
+        // 如果指定了社团ID，进一步过滤
+        if (clubId != null) {
+            queryWrapper.eq("club_id", clubId);
+        }
+
+        // 按申请时间降序排列
+        queryWrapper.orderByDesc("join_time");
+
+        // 分页查询
+        IPage<UserClubRelation> resultPage = this.baseMapper.selectPage(page, queryWrapper);
+        List<UserClubRelation> pendingList = resultPage.getRecords();
+
+        // 转换为VO列表
+        List<PendingJoinApplyVO> voList = new ArrayList<>();
+        if (pendingList != null && !pendingList.isEmpty()) {
+            for (UserClubRelation relation : pendingList) {
+                PendingJoinApplyVO vo = new PendingJoinApplyVO();
+                vo.setId(relation.getId());
+                vo.setUserId(relation.getUserId());
+                vo.setClubId(relation.getClubId());
+                vo.setJoinTime(relation.getJoinTime());
+                vo.setStatus(relation.getStatus());
+                vo.setStatusDesc("待审核");
+
+                // 关联查询用户姓名
+                com.college.club.entity.SysUser user = sysUserService.getById(relation.getUserId());
+                if (user != null) {
+                    vo.setUserName(user.getUsername());
+                } else {
+                    vo.setUserName("未知用户");
+                }
+
+                // 关联查询社团名称
+                ClubInfo clubInfo = clubInfoMapper.selectById(relation.getClubId());
+                if (clubInfo != null) {
+                    vo.setClubName(clubInfo.getClubName());
+                } else {
+                    vo.setClubName("该社团已删除");
+                }
+
+                voList.add(vo);
+            }
+        }
+
+        // 封装分页VO
+        PageVO<PendingJoinApplyVO> pageVO = new PageVO<>();
+        pageVO.setRecords(voList);
+        pageVO.setTotal(resultPage.getTotal());
+        pageVO.setPages(resultPage.getPages());
+        pageVO.setCurrent(pageNum);
+        pageVO.setSize(pageSize);
+
+        return Result.success(pageVO);
     }
 
 }

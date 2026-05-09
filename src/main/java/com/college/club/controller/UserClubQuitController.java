@@ -56,4 +56,14 @@ public class UserClubQuitController {
         return userClubQuitService.withdrawQuitApply(QuitApply);
     }
 
+    @GetMapping("/pending-list")
+    @Operation(summary = "待审核退出申请列表（管理员/老师）")
+    public Result<?> getPendingQuitApplyList(
+            @RequestParam(required = false) Integer pageNum,
+            @RequestParam(required = false) Integer pageSize,
+            @RequestParam(required = false) Long clubId
+    ) {
+        return userClubQuitService.getPendingQuitApplyList(pageNum, pageSize, clubId);
+    }
+
 }

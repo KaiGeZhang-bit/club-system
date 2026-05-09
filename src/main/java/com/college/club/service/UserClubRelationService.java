@@ -14,4 +14,6 @@ public interface UserClubRelationService extends IService<UserClubRelation> {
     Result<?> MyJoinApply(Integer pageNum, Integer pageSize);
     //撤回申请
     Result<?> withdraw(Long relationId);
+    //管理员查看待审核加入申请列表
+    Result<?> getPendingJoinApplyList(Integer pageNum, Integer pageSize, Long clubId);
 }
