@@ -35,28 +35,18 @@ public class ActivityInfoServiceImpl extends ServiceImpl<ActivityInfoMapper, Act
 
         SysUser currentUser = sysUserService.getCurrentUser();
         Long userId  = currentUser.getId();
-
         Long clubId = dto.getClubId();
         if(currentUser.getRole() != 1) {
             throw BusinessException.businessError("你不是社团负责人，无权进行该操作");
         }
-
-
         // 校验社团是否存在
-
         ClubInfo club = clubInfoMapper.selectById(clubId);
-
-
         if (club == null) {
             throw BusinessException.businessError("所属社团不存在");
         }
-
         if(!userId.equals(club.getLeaderId())){
             throw BusinessException.businessError("你不是该社团的负责人，无权对该社团进行操作");
         }
-
-
-
         // 构建活动实体
         ActivityInfo activity = new ActivityInfo();
         BeanUtils.copyProperties(dto, activity);

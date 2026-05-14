@@ -54,13 +54,10 @@ public class ExpenseStatisticsServiceImpl implements ExpenseStatisticsService {
                 }
             }
         }
-        
         if (clubId == null) {
             throw BusinessException.businessError("请指定社团ID");
         }
-        
         checkPermission(currentUser, clubId);
-        
         return calculateStatistics(clubId);
     }
 
@@ -71,7 +68,6 @@ public class ExpenseStatisticsServiceImpl implements ExpenseStatisticsService {
         if (currentUser.getRole() != 1) {
             throw BusinessException.businessError("只有社团负责人可以查询此数据");
         }
-        
         ClubInfo club = clubInfoMapper.selectOne(
             new LambdaQueryWrapper<ClubInfo>().eq(ClubInfo::getLeaderId, currentUser.getId())
         );
@@ -79,10 +75,8 @@ public class ExpenseStatisticsServiceImpl implements ExpenseStatisticsService {
         if (club == null) {
             throw BusinessException.businessError("您还不是任何社团的负责人");
         }
-        
         return calculateStatistics(club.getId());
     }
-
     private ExpenseStatisticsVO calculateStatistics(Long clubId) {
         ExpenseStatisticsVO vo = new ExpenseStatisticsVO();
         vo.setClubId(clubId);

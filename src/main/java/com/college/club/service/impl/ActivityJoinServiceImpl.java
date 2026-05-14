@@ -162,6 +162,11 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
             return Result.failParam("审核状态只能为1（通过）或2（驳回）");
         }
 
+        SysUser currentUser = sysUserService.getCurrentUser();
+        if (currentUser == null) {
+            return Result.failBusiness("请先登录");
+        }
+
         // 校验报名记录存在（业务错误）
         QueryWrapper<ActivityJoin> queryWrapper = new QueryWrapper<>();
         queryWrapper.eq("activity_id", dto.getActivityId())
@@ -186,7 +191,7 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
 
         // 更新审核信息
         activityJoin.setAuditStatus(dto.getAuditStatus());
-        activityJoin.setAuditorId(dto.getAuditorId());
+        activityJoin.setAuditorId(currentUser.getId());
         activityJoin.setAuditRemark(dto.getAuditRemark());
         activityJoin.setAuditTime(LocalDateTime.now());
         this.updateById(activityJoin);
@@ -245,7 +250,7 @@ public class ActivityJoinServiceImpl extends ServiceImpl<ActivityJoinMapper, Act
         try{
             //3.构造二维码业务内容（前缀+活动ID，做基础业务区分）
 
-            String qrContent = "http://" + LOCAL_IP + ":8888/sign.html?qrContent=" + QR_CONTENT_PREFIX + activityId;
+            String qrContent = QR_CONTENT_PREFIX + activityId;
 
             //4，复用工具类生成二维码Base64（没有额外要求，默认使用宽高300*300）
             String qrCodeBase64 = QrCodeUtil.generateQrCodeBase64(qrContent);

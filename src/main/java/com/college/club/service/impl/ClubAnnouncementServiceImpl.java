@@ -43,8 +43,22 @@ public class ClubAnnouncementServiceImpl extends ServiceImpl<ClubAnnouncementMap
         if (clubInfo == null) {
             return Result.failBusiness("新增失败：关联的社团不存在");
         }
+        // 3. 获取当前登录用户作为发布人
+        SysUser currentUser = sysUserService.getCurrentUser();
+        if (currentUser == null) {
+            return Result.failBusiness("新增失败：请先登录");
+        }
+        announcement.setPublisherId(currentUser.getId());
 
-        // 3. 保存公告
+        // 4. 设置发布时间
+        if (announcement.getPublishTime() == null) {
+            announcement.setPublishTime(java.time.LocalDateTime.now());
+        }
+        if (announcement.getUpdateTime() == null) {
+            announcement.setUpdateTime(java.time.LocalDateTime.now());
+        }
+
+        // 5. 保存公告
         boolean saveSuccess = this.save(announcement);
         return saveSuccess ? Result.success("公告新增成功") : Result.failBusiness("公告新增失败");
     }
@@ -87,6 +101,8 @@ public class ClubAnnouncementServiceImpl extends ServiceImpl<ClubAnnouncementMap
             return Result.failBusiness("修改失败：关联的社团不存在");
         }
 
+        announcement.setUpdateTime(java.time.LocalDateTime.now());
+
         // 4. 执行修改
         boolean updateSuccess = this.updateById(announcement);
         return updateSuccess ? Result.success("公告修改成功") : Result.failBusiness("公告修改失败");
@@ -111,13 +127,11 @@ public class ClubAnnouncementServiceImpl extends ServiceImpl<ClubAnnouncementMap
 
     @Override
     public Result<?> getAnnouncementPage(Integer pageNum, Integer pageSize,Long clubId,Integer status,Integer isTop) {
-
         //1.设置分页默认值（防止前端不传参数导致报错
         if (pageNum == null || pageSize == null) {
             pageNum = 1;
             pageSize = 10;
         }
-
         //2.创建Mybatis-Plus的分页对象（核心：告诉插件要查第几页、每页几条
         Page<ClubAnnouncement> page = new Page<>(pageNum, pageSize);
 
